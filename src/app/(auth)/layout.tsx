@@ -25,14 +25,14 @@ export default async function AuthLayout({
 
   return (
     <main className="min-h-dvh bg-background lg:grid lg:grid-cols-[1.05fr_0.95fr]">
-      <section className="nav-dark relative hidden overflow-hidden px-10 py-12 text-foreground lg:flex lg:flex-col">
+      <section className="relative hidden overflow-hidden px-10 py-12 text-foreground lg:flex lg:flex-col lg:border-r lg:border-border lg:bg-subtle">
         <div className="brand-grid absolute inset-0 opacity-20" aria-hidden />
         <div className="brand-glow brand-glow-a" aria-hidden />
         <div className="brand-glow brand-glow-b" aria-hidden />
 
         <div className="relative flex items-center justify-between gap-6">
           <BrandLogo branding={branding} />
-          <span className="kicker text-text-3">Open source · MIT</span>
+          <span className="kicker text-text-2">Open source · MIT</span>
         </div>
 
         <div className="relative mt-auto max-w-xl">
