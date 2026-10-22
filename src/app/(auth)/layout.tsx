@@ -59,9 +59,6 @@ export default async function AuthLayout({
             ))}
           </div>
 
-          <p className="mt-11 text-[10.5px] uppercase tracking-[0.18em] text-text-4">
-            Basado en Vocero CRM (MIT) · Kevin Belier
-          </p>
         </div>
       </section>
 
@@ -73,19 +70,6 @@ export default async function AuthLayout({
           </div>
 
           {children}
-
-          <p className="mt-9 text-center text-[11px] leading-relaxed text-text-4">
-            Basado en{" "}
-            <a
-              href="https://github.com/kevinrivm/vocero-crm"
-              target="_blank"
-              rel="noreferrer"
-              className="font-semibold text-text-3 underline decoration-border-strong underline-offset-2 hover:text-foreground"
-            >
-              Vocero CRM
-            </a>{" "}
-            (MIT) de Kevin Belier.
-          </p>
         </div>
       </section>
     </main>

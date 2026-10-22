@@ -6,7 +6,6 @@ un nuevo release. No contiene secretos.
 ## Repositorio
 
 - **Público:** `https://github.com/iamnocodeveloper/nocodeveloper-crm`
-- **Upstream:** `https://github.com/kevinrivm/vocero-crm`
 - **Licencia:** MIT (aviso original en `LICENSE`)
 - **Versión:** `1.0.0` en `package.json`, manifiestos e imagen.
 
@@ -91,5 +90,5 @@ clientes reales al repo público.
 - El core público vive en `main`.
 - Los cambios de la capa móvil se hacen primero aquí y se portan al build
   privado cuando apliquen.
-- `upstream` se conserva para traer fixes de Vocero CRM con cherry-pick o merge
-  selectivo; revisa siempre los conflictos de identidad y licencia.
+- `upstream` se conserva para traer fixes del proyecto base con cherry-pick o
+  merge selectivo; revisa siempre los conflictos de identidad y licencia.

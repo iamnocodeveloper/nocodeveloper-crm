@@ -158,11 +158,9 @@ Para producción:
 - El repo incluye `SECURITY.md` con el canal de reporte.
 - Las migraciones y los secretos se manejan fuera del control de versiones.
 
-## Licencia y créditos
+## Licencia
 
-**MIT.** Nocodeveloper CRM es una distribución rebrandeada de [Vocero CRM](https://github.com/kevinrivm/vocero-crm), Copyright © 2026 **Kevin Belier**, publicado bajo licencia MIT.
-
-El aviso original se conserva en [LICENSE](LICENSE); los créditos y el alcance del rebranding están en [NOTICE](NOTICE) y [docs/REBRANDING.md](docs/REBRANDING.md). La marca, la identidad visual y la experiencia móvil de Nocodeveloper son propias; el nombre y el logo de Vocero no se reclaman.
+MIT. Consulta [LICENSE](LICENSE).
 
 ## Contribuir
 

@@ -2,8 +2,8 @@
 
 ## 1.0.0 — 2026-10-22
 
-Primera release pública de **Nocodeveloper CRM**, basada en el core de
-**Vocero CRM 2.0.0** (MIT, Kevin Belier).
+Primera release pública de **Nocodeveloper CRM**: core open source, identidad
+propia y experiencia móvil/PWA.
 
 ### Identidad
 
@@ -33,8 +33,7 @@ Primera release pública de **Nocodeveloper CRM**, basada en el core de
 
 - No incluye los módulos privados de operación de clientes (bloqueo avanzado de
   IA, catálogo, ventas y automatizaciones específicas).
-- El aviso MIT original se conserva en `LICENSE`; los créditos están en
-  `NOTICE`.
+- La licencia MIT se conserva en `LICENSE`.
 
 ### Actualizar
 

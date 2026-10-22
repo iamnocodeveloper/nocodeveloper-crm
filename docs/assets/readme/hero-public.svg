@@ -44,8 +44,7 @@
     <text x="0" y="322" font-family="Arial, Helvetica, sans-serif" font-size="14.5" fill="#8A977C">conocimiento de tu negocio. Todo en tu servidor, también en el teléfono.</text>
 
     <g><rect x="0" y="354" width="137.6" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="15" cy="370" r="3" fill="#C6F24E"/><text x="26" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">WhatsApp en vivo</text></g><g><rect x="147.6" y="354" width="166" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="162.6" cy="370" r="3" fill="#C6F24E"/><text x="173.6" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">Agente + Laboratorio</text></g><g><rect x="323.6" y="354" width="102.1" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="338.6" cy="370" r="3" fill="#C6F24E"/><text x="349.6" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">Móvil + PWA</text></g><g><rect x="435.70000000000005" y="354" width="102.1" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="450.70000000000005" cy="370" r="3" fill="#C6F24E"/><text x="461.70000000000005" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">Self-hosted</text></g>
-    <text x="0" y="400" font-family="Arial, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.5" fill="#8A977C">Basado en Vocero CRM (MIT) · Kevin Belier</text>
-  </g>
+</g>
 
   <g transform="translate(930,24)" filter="url(#shadow)">
     <rect x="0" y="0" width="250" height="412" rx="34" fill="url(#phone)" stroke="#2C3827" stroke-width="1.5"/>

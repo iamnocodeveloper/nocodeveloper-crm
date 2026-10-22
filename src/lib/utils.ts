@@ -8,7 +8,7 @@ export function cn(...inputs: ClassValue[]) {
 /** Iniciales (máx 2) para el avatar de un contacto. */
 export function initials(name: string): string {
   // 028 — La primera letra o cifra de cada palabra. Los nombres de Instagram y
-  // Facebook traen emojis («Kevin Belier 🐏», «Vivir con virtud ⚖️»): tomar el
+  // Facebook traen emojis («Nocodeveloper 🐏», «Vivir con virtud ⚖️»): tomar el
   // primer carácter partía el emoji a la mitad («K�») o lo usaba de inicial.
   const parts = name
     .trim()

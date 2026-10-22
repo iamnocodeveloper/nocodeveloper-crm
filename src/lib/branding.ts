@@ -170,7 +170,7 @@ function inkPasses(base: Rgb): boolean {
  */
 type DarkRecipe = { bg: Rgb; minContrast: number; soft: number; tint: number; text: number };
 
-// Página oscura: con 3:1 el azul Vocero conserva la tinta blanca (4.5:1); el
+// Página oscura: con 3:1 el azul Nocodeveloper conserva la tinta blanca (4.5:1); el
 // tint más denso (0.78) hace que la fila seleccionada se vea sin leer el color
 // del texto (≥ 1.25:1 contra el fondo).
 const PAGE_DARK: DarkRecipe = { bg: DARK_BG, minContrast: 3, soft: 0.64, tint: 0.78, text: 0.34 };
