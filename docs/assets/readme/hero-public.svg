@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="480" viewBox="0 0 1280 480" role="img" aria-label="Nocodeveloper CRM">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#070806"/>
+      <stop offset=".55" stop-color="#11150F"/>
+      <stop offset="1" stop-color="#070806"/>
+    </linearGradient>
+    <radialGradient id="glowA" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#C6F24E" stop-opacity=".34"/>
+      <stop offset="1" stop-color="#C6F24E" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glowB" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#57E39B" stop-opacity=".22"/>
+      <stop offset="1" stop-color="#57E39B" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0V48" fill="none" stroke="#C6F24E" stroke-opacity=".07" stroke-width="1"/>
+    </pattern>
+    <linearGradient id="phone" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#101410"/>
+      <stop offset="1" stop-color="#070806"/>
+    </linearGradient>
+    <filter id="blur"><feGaussianBlur stdDeviation="42"/></filter>
+    <filter id="shadow" x="-40%" y="-40%" width="180%" height="180%">
+      <feDropShadow dx="0" dy="26" stdDeviation="26" flood-color="#000" flood-opacity=".65"/>
+    </filter>
+  </defs>
+  <rect width="1280" height="480" fill="url(#bg)"/>
+  <rect width="1280" height="480" fill="url(#grid)"/>
+  <ellipse cx="1040" cy="24" rx="430" ry="270" fill="url(#glowA)" filter="url(#blur)"/>
+  <ellipse cx="760" cy="470" rx="390" ry="230" fill="url(#glowB)" filter="url(#blur)"/>
+  <path d="M0 402C250 332 402 444 642 384S1070 300 1280 352" fill="none" stroke="#C6F24E" stroke-opacity=".2" stroke-width="1.5"/>
+
+  <g transform="translate(72,62)">
+    <rect x="0" y="0" width="254.1" height="32" rx="16" fill="#C6F24E" fill-opacity=".1" stroke="#C6F24E" stroke-opacity=".34"/>
+    <circle cx="17" cy="16" r="3.4" fill="#C6F24E"/>
+    <text x="31" y="21" font-family="Arial, Helvetica, sans-serif" font-size="10.5" font-weight="800" letter-spacing="1.4" fill="#F3F6E8">OPEN SOURCE · SELF-HOSTED · MIT</text>
+
+    <text x="0" y="118" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="800" letter-spacing="-3.4" fill="#F3F6E8">Nocodeveloper</text>
+    <text x="0" y="180.56" font-family="Arial, Helvetica, sans-serif" font-size="68" font-weight="800" letter-spacing="-3.4" fill="#C6F24E">CRM</text>
+
+    <text x="0" y="262" font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-size="31" fill="#F3F6E8">El CRM que se prueba solo.</text>
+    <text x="0" y="300" font-family="Arial, Helvetica, sans-serif" font-size="14.5" fill="#8A977C">Bandeja de WhatsApp en tiempo real, pipeline y un agente con el</text>
+    <text x="0" y="322" font-family="Arial, Helvetica, sans-serif" font-size="14.5" fill="#8A977C">conocimiento de tu negocio. Todo en tu servidor, también en el teléfono.</text>
+
+    <g><rect x="0" y="354" width="137.6" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="15" cy="370" r="3" fill="#C6F24E"/><text x="26" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">WhatsApp en vivo</text></g><g><rect x="147.6" y="354" width="166" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="162.6" cy="370" r="3" fill="#C6F24E"/><text x="173.6" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">Agente + Laboratorio</text></g><g><rect x="323.6" y="354" width="102.1" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="338.6" cy="370" r="3" fill="#C6F24E"/><text x="349.6" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">Móvil + PWA</text></g><g><rect x="435.70000000000005" y="354" width="102.1" height="32" rx="16" fill="#C6F24E" fill-opacity=".08" stroke="#C6F24E" stroke-opacity=".32"/><circle cx="450.70000000000005" cy="370" r="3" fill="#C6F24E"/><text x="461.70000000000005" y="375" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">Self-hosted</text></g>
+    <text x="0" y="400" font-family="Arial, Helvetica, sans-serif" font-size="10.5" letter-spacing="1.5" fill="#8A977C">Basado en Vocero CRM (MIT) · Kevin Belier</text>
+  </g>
+
+  <g transform="translate(930,24)" filter="url(#shadow)">
+    <rect x="0" y="0" width="250" height="412" rx="34" fill="url(#phone)" stroke="#2C3827" stroke-width="1.5"/>
+    <rect x="8" y="8" width="234" height="396" rx="27" fill="#080B08"/>
+    <rect x="88" y="17" width="74" height="6" rx="3" fill="#2C3827"/>
+    <text x="22" y="48" font-family="Arial, Helvetica, sans-serif" font-size="10" fill="#8A977C">9:41</text>
+    <circle cx="214" cy="45" r="3" fill="#C6F24E"/>
+
+    <circle cx="34" cy="82" r="13" fill="#C6F24E" fill-opacity=".18" stroke="#C6F24E" stroke-opacity=".38"/>
+    <text x="34" y="86" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="800" fill="#C6F24E">N</text>
+    <text x="54" y="79" font-family="Arial, Helvetica, sans-serif" font-size="11.5" font-weight="700" fill="#F3F6E8">Nocodeveloper</text>
+    <text x="54" y="93" font-family="Arial, Helvetica, sans-serif" font-size="8.5" fill="#C6F24E">agente activo</text>
+    <line x1="16" y1="110" x2="234" y2="110" stroke="#2C3827" stroke-opacity=".8"/>
+
+    <rect x="18" y="126" width="166" height="38" rx="12" fill="#11150F" stroke="#2C3827" stroke-width=".8"/>
+    <text x="30" y="149" font-family="Arial, Helvetica, sans-serif" font-size="9.5" fill="#F3F6E8">Hola, ¿tienen disponibilidad?</text>
+    <rect x="62" y="176" width="170" height="38" rx="12" fill="#C6F24E" fill-opacity=".18" stroke="#C6F24E" stroke-opacity=".4"/>
+    <text x="74" y="199" font-family="Arial, Helvetica, sans-serif" font-size="9.5" fill="#F3F6E8">Sí, te comparto horarios.</text>
+    <rect x="18" y="226" width="148" height="38" rx="12" fill="#11150F" stroke="#2C3827" stroke-width=".8"/>
+    <text x="30" y="249" font-family="Arial, Helvetica, sans-serif" font-size="9.5" fill="#F3F6E8">Perfecto, agendo.</text>
+    <rect x="52" y="276" width="180" height="38" rx="12" fill="#C6F24E" fill-opacity=".18" stroke="#C6F24E" stroke-opacity=".4"/>
+    <text x="64" y="299" font-family="Arial, Helvetica, sans-serif" font-size="9.5" fill="#F3F6E8">Listo, te confirmo por aquí.</text>
+
+    <rect x="16" y="334" width="218" height="38" rx="19" fill="#11150F" stroke="#2C3827"/>
+    <circle cx="36" cy="353" r="9" fill="#C6F24E" fill-opacity=".16"/>
+    <path d="M33 353h6M36 350v6" stroke="#C6F24E" stroke-width="1.6" stroke-linecap="round"/>
+    <text x="54" y="357" font-family="Arial, Helvetica, sans-serif" font-size="9" fill="#8A977C">Escribe una respuesta…</text>
+    <circle cx="216" cy="353" r="14" fill="#C6F24E"/>
+    <path d="M210 353l9-4-2 9-3-2-4 3z" fill="#070806"/>
+
+    <line x1="16" y1="382" x2="234" y2="382" stroke="#2C3827" stroke-opacity=".8"/>
+    <circle cx="54" cy="396" r="3.5" fill="#C6F24E"/>
+    <rect x="100" y="393" width="18" height="6" rx="3" fill="#8A977C" fill-opacity=".55"/>
+    <rect x="162" y="393" width="18" height="6" rx="3" fill="#8A977C" fill-opacity=".55"/>
+    <rect x="207" y="391" width="14" height="10" rx="3" fill="#8A977C" fill-opacity=".55"/>
+  </g>
+
+  <g transform="translate(1162,338)">
+    <rect x="0" y="0" width="96" height="58" rx="14" fill="#11150F" stroke="#C6F24E" stroke-opacity=".5"/>
+    <circle cx="20" cy="20" r="5" fill="#C6F24E"/>
+    <text x="32" y="24" font-family="Arial, Helvetica, sans-serif" font-size="9" font-weight="800" letter-spacing=".5" fill="#F3F6E8">PWA</text>
+    <text x="12" y="42" font-family="Arial, Helvetica, sans-serif" font-size="8" fill="#8A977C">instalable</text>
+  </g>
+</svg>

@@ -1,0 +1,441 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Sistema de diseño de Nocodeveloper CRM: obsidiana, papel cálido y lima.
+  Papel cálido (#F7F7F0), tinta obsidiana, acento lima, tipografía Space
+  Grotesk para la interfaz, Fraunces itálica para acentos editoriales y
+  JetBrains Mono para etiquetas y horas.
+
+  El tema activo se selecciona con `data-theme` en <html> (ver src/lib/theme.ts):
+  el servidor lo escribe desde la cookie, así que no hay parpadeo.
+  Los tokens de acento (--accent*) se sobreescriben en runtime por el
+  white-label de la organización (Configuración → Marca), para AMBOS temas.
+*/
+@layer base {
+  :root {
+    color-scheme: light;
+
+    /* Neutros: papel frío de la landing */
+    --bg: #F7F7F0;
+    --bg-subtle: #F3F4EA;
+    --bg-panel: #E9ECDF;
+    --bg-hover: #E5E9DA;
+    /* Lo que flota sobre la página: diálogos, cajones, menús. En claro es el
+       mismo blanco de siempre; en oscuro se aclara para despegarse. */
+    --bg-raised: #ffffff;
+    --text: #101216;
+    --text-2: #4C5147;
+    --text-3: #7A8073;
+    --text-4: #A7AC9E;
+    --border: #E2E4D8;
+    --border-strong: #D3D7C7;
+    /* Chips dentro de una fila y la fila bajo el cursor. En claro coinciden
+       con --bg y --bg-subtle; en oscuro NO: ahí --bg-subtle es más oscuro que
+       --bg y un chip con fondo --bg desaparece dentro de la fila. */
+    --chip-bg: #ffffff;
+    --row-hover: #F3F4EA;
+    /* 215 — Lo no hábil del calendario de Citas (ver .cal-off). */
+    --cal-off: #F3F4EA;
+
+    /* Chat: el cliente entra en verde WhatsApp, el CRM contesta en el acento */
+    --chat-bg: #F3F4EA;
+    --bubble-in: #ECF6D6;
+    --bubble-in-border: #D7E9B5;
+    --bubble-out: var(--accent-tint);
+    --bubble-out-border: var(--accent-soft);
+    --bubble-out-text: var(--text);
+
+    /* Acento (default: lima Nocodeveloper; el white-label lo sobreescribe) */
+    --accent: #77912F;
+    --accent-hover: #647A27;
+    --accent-soft: #DCEBB0;
+    --accent-tint: #E9F3C8;
+    --accent-text: #4E641C;
+    --accent-fg: #0F1419;
+    /* El acento como TINTA (una hora, un enlace) y como anillo de foco. En
+       claro son el acento mismo; en oscuro, sus variantes aclaradas: el
+       acento sólido es para rellenos y ahí no alcanza AA como texto. */
+    --accent-ink: var(--accent);
+    --ring: var(--accent);
+    /* Velo translúcido ENCIMA del acento (contadores dentro de un chip). */
+    --accent-veil: rgba(16, 18, 22, 0.18);
+    --bg-active: var(--accent-tint);
+
+    /* Estado: color puro + tríada (tint = fondo, soft = borde, text = tinta) */
+    --success: #3F8F3A;
+    --success-tint: #EDF7E5;
+    --success-soft: #D3EDC5;
+    --success-text: #2F6B2A;
+
+    --warning: #D99A1E;
+    --warning-tint: #FBF3DD;
+    --warning-soft: #F0DCA8;
+    --warning-text: #8A5A10;
+
+    --danger: #C85A4A;
+    --danger-tint: #FBE9E5;
+    --danger-soft: #F0C9BE;
+    --danger-text: #A84232;
+    --danger-fg: #ffffff;
+
+    --info: #C6F24E;
+    --info-tint: #F3FCE0;
+    --info-soft: #E6F9B8;
+    --info-text: #4B6A00;
+
+    /* Superficies auxiliares */
+    --overlay: rgba(8, 12, 8, 0.55);
+    --knob: #ffffff;
+
+    /* Radios y sombras (las de la landing, con tinte verde/negro) */
+    --radius-sm: 10px;
+    --radius: 14px;
+    --radius-lg: 20px;
+    --shadow-sm: 0 1px 2px rgba(16, 24, 8, 0.06);
+    --shadow-md: 0 14px 40px -16px rgba(16, 24, 8, 0.16);
+    --shadow-pop: 0 30px 80px -20px rgba(16, 24, 8, 0.22),
+      0 8px 24px -12px rgba(16, 24, 8, 0.12);
+
+    /* Densidad de filas de conversación */
+    --row-py: 11px;
+  }
+
+  /*
+    Tema oscuro v2 (R8). Tres niveles que se leen de un vistazo, como en claro:
+    la barra lateral (obsidiana fija, ver `.nav-dark`) es lo más oscuro; la
+    página va un escalón ARRIBA de ella (≥ 1.25:1, si no el bicolor
+    desaparece) y lo que flota (diálogos, cajones) otro más. Antes todo vivía
+    entre #0A0C0A y #141A12: barra y página a 1.04:1 y las sombras no se
+    veían. Los pisos de contraste los vigila tests/unit/contraste-temas.test.ts.
+  */
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+
+    /* Escalera de superficies, de la más honda a la más alta. --bg-subtle es
+       el hueco (hilo del chat, columnas del pipeline, fuera de horario), como
+       el papel gris del tema claro. */
+    --bg-subtle: #151A12;
+    --bg: #1E241B;
+    --row-hover: #252B22;
+    --bg-raised: #292F24;
+    --chip-bg: #2A3126;
+    --bg-panel: #303829;
+    --bg-hover: #3A4432;
+    /* 215 — Lo no hábil del calendario: el mismo hueco que en claro. */
+    --cal-off: #151A12;
+    --text: #F3F6E8;
+    --text-2: #C3CBB7;
+    /* ≥ 4.5:1 incluso sobre el hover más claro: la `.kicker` mide 10.5px. */
+    --text-3: #B4C0A5;
+    /* Solo iconos y deshabilitado (≥ 3:1), nunca texto de lectura. */
+    --text-4: #98A58C;
+    /* Bordes ≥ 1.6:1 contra la página (214) y ≥ 1.4:1 contra lo que flota. */
+    --border: #4E5B44;
+    --border-strong: #667A59;
+
+    /* Chat */
+    --chat-bg: #151A12;
+    --bubble-in: #2A4524;
+    --bubble-in-border: #3C6234;
+
+    /* Acento: respaldo con el lima Nocodeveloper calculado para este fondo; el
+       white-label lo recalcula (ver resolveAccentSet en lib/branding). */
+    --accent: #C6F24E;
+    --accent-hover: #CFF46A;
+    --accent-soft: #5A6E2D;
+    --accent-tint: #435126;
+    --accent-text: #D9F68A;
+    --accent-fg: #0F1419;
+    --accent-ink: var(--accent-text);
+    --ring: var(--accent-hover);
+    --accent-veil: rgba(0, 0, 0, 0.22);
+
+    /* Estado sobre fondo oscuro: el tono puro oscurecido (no mezclado con el
+       obsidiana, que lo vuelve gris), un escalón arriba de --bg. */
+    --success: #8BD45A;
+    --success-tint: #1B2A18;
+    --success-soft: #2F4A28;
+    --success-text: #B6E88A;
+
+    --warning: #f5b74a;
+    --warning-tint: #453315;
+    --warning-soft: #765824;
+    --warning-text: #f7c86f;
+
+    --danger: #ef6b6b;
+    --danger-tint: #562727;
+    --danger-soft: #843b3b;
+    --danger-text: #f59a9a;
+    --danger-fg: #1b0d10;
+
+    --info: #C6F24E;
+    --info-tint: #2A3517;
+    --info-soft: #4A563F;
+    --info-text: #DFFF88;
+
+    --overlay: rgba(0, 0, 0, 0.72);
+    --knob: #EAF0DA;
+
+    /* Sombras: sobre oscuro necesitan más negro para leerse */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 14px 40px -16px rgba(0, 0, 0, 0.6);
+    --shadow-pop: 0 30px 80px -20px rgba(0, 0, 0, 0.75),
+      0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  /*
+    Sidebar: obsidiana fija, sin importar el tema claro/oscuro del resto de
+    la app (como el lateral de la landing). Redeclara sus neutros directamente
+    sobre el `<aside>` (ver AppNav) y la barra superior del teléfono, para que
+    las clases que ya usan (bg-subtle, border, text-2, text-3,
+    hover:bg-accent…) hereden estos valores en vez de los de `:root`.
+
+    Son SUS valores, no una copia de los del tema oscuro: la página oscura
+    vive un escalón arriba (≥ 1.25:1) para que el bicolor no desaparezca, y la
+    barra se ve idéntica en los dos temas. El acento (--accent*, para el ítem
+    activo y el avatar) lo fija por separado `accentCssVariables` en
+    lib/branding.ts, calculado contra ESTE fondo (NAV_BG).
+  */
+  .nav-dark {
+    color-scheme: dark;
+    --bg: #070806;
+    --bg-subtle: #070806;
+    --bg-panel: #141A12;
+    --bg-raised: #141A12;
+    --bg-hover: #1B2418;
+    --text: #F3F6E8;
+    --text-2: #B8C4AA;
+    --text-3: #8A977C;
+    --text-4: #63705A;
+    --border: #2C3827;
+    --border-strong: #3D4C35;
+    --chip-bg: #141A12;
+    --row-hover: #11150F;
+    --accent-ink: var(--accent-text);
+    --ring: var(--accent);
+    --shadow-pop: 0 30px 80px -20px rgba(0, 0, 0, 0.75),
+      0 8px 24px -12px rgba(0, 0, 0, 0.5);
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  html {
+    height: 100%;
+    /* iOS no debe inflar el texto al girar el teléfono. */
+    -webkit-text-size-adjust: 100%;
+  }
+  /* Un `select` o un `textarea` con un texto largo impone su ancho mínimo y
+     ensancha la tarjeta que lo contiene (los formularios del Agente se salían
+     12 px por esto). En una app con tarjetas, el control debe encogerse. */
+  input,
+  select,
+  textarea {
+    min-width: 0;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    min-height: 100%;
+    letter-spacing: -0.01em;
+    text-rendering: optimizeLegibility;
+    /* Sensación de app: el rebote del documento no arrastra la barra inferior
+       ni dispara la recarga al tirar hacia abajo. */
+    overscroll-behavior-y: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  ::selection {
+    background: var(--accent);
+    color: var(--accent-fg);
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: var(--border-strong);
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+}
+
+@layer components {
+  /* Mosaico de marca: degradado del acento, como el favicon */
+  .brand-tile {
+    background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  }
+
+  /* Rejilla difuminada del hero de la landing (login) */
+  .brand-grid {
+    background-image:
+      linear-gradient(to right, var(--accent-soft) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--accent-soft) 1px, transparent 1px);
+    background-size: 52px 52px;
+    opacity: 0.3;
+    -webkit-mask-image: radial-gradient(
+      ellipse 90% 80% at 50% 20%,
+      #000 30%,
+      transparent 75%
+    );
+    mask-image: radial-gradient(ellipse 90% 80% at 50% 20%, #000 30%, transparent 75%);
+  }
+
+  /* Resplandores suaves que flotan detrás del formulario */
+  .brand-glow {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(90px);
+    pointer-events: none;
+  }
+  .brand-glow-a {
+    width: 640px;
+    height: 640px;
+    right: -160px;
+    top: -120px;
+    background: radial-gradient(
+      circle,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 65%
+    );
+    animation: brand-drift 14s ease-in-out infinite alternate;
+  }
+  .brand-glow-b {
+    width: 460px;
+    height: 460px;
+    left: -140px;
+    bottom: -180px;
+    background: radial-gradient(circle, rgba(198, 242, 78, 0.18), transparent 65%);
+    animation: brand-drift 18s ease-in-out infinite alternate-reverse;
+  }
+  @keyframes brand-drift {
+    from {
+      transform: translate(0, 0) scale(1);
+    }
+    to {
+      transform: translate(-40px, 30px) scale(1.08);
+    }
+  }
+
+  /* Fondo del hilo: un leve resplandor del acento en la esquina, como en el
+     mockup de la landing. Si el navegador no sabe color-mix, queda el plano. */
+  .thread-bg {
+    background-color: var(--chat-bg);
+    background-image: radial-gradient(
+      circle at 82% 0%,
+      color-mix(in srgb, var(--accent) 7%, transparent),
+      transparent 55%
+    );
+  }
+  /* En oscuro el 7% no se percibe y el hilo vacío se ve como un hueco. */
+  :root[data-theme="dark"] .thread-bg {
+    background-image: radial-gradient(
+      circle at 82% 0%,
+      color-mix(in srgb, var(--accent) 16%, transparent),
+      transparent 60%
+    );
+  }
+
+  /* 215 — Rejilla del calendario de Citas: una línea por hora. El alto de la
+     hora lo fija el componente (--cal-hour) para que líneas y citas no se
+     desfasen si alguien lo cambia en un solo sitio. */
+  .cal-hours {
+    background-image: linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+    background-size: 100% var(--cal-hour, 48px);
+  }
+
+  /* 215 — Horas fuera del horario del negocio en Día y Semana. */
+  .cal-off {
+    background-color: var(--cal-off);
+  }
+
+  /* 215 — Un bloqueo no es una cita: rayado neutro, legible en ambos temas. */
+  .booking-hatch {
+    background-color: var(--bg-panel);
+    background-image: repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--text-3) 22%, transparent) 0 1px,
+      transparent 1px 7px
+    );
+  }
+
+  /* Etiqueta editorial en mono: "01 · BANDEJA", "ETAPA", "NOTAS" */
+  .kicker {
+    @apply font-mono text-[10.5px] font-medium uppercase tracking-[0.14em] text-text-3;
+  }
+}
+
+/*
+  Safari en iOS hace zoom a la página cuando enfocas un campo cuya tipografía
+  mide menos de 16px, y luego no la devuelve: escribir en la Bandeja dejaba el
+  CRM descuadrado. Por debajo de `md` subimos el mínimo de TODO campo de texto
+  (los `select` quedan fuera: abren su propia rueda nativa y varios viven como
+  chips angostos). Va con `!important` a propósito — compite contra utilidades
+  de Tailwind (`text-sm`, `text-xs`) que ganan por especificidad de clase.
+*/
+@media (max-width: 767px) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/*
+  Hojas móviles para los diálogos existentes.
+  Todos los modales del CRM son `[role="dialog"]` con la cubierta
+  `fixed inset-0`. En el teléfono se anclan abajo, a todo el ancho, con las
+  esquinas de arriba redondeadas, un asa y scroll interno. Se hace aquí y no
+  en 19 componentes: es la misma pieza de diseño y así no se escapa ninguno.
+  Las hojas que ya son `fixed inset-x-0 bottom-0` (acciones/adjuntos) no
+  llevan `inset-0` y quedan fuera de esta regla.
+*/
+@keyframes modal-sheet-in {
+  from {
+    transform: translateY(14px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@media (max-width: 767px) {
+  [role="dialog"].fixed.inset-0 {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  [role="dialog"].fixed.inset-0 > * {
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 92dvh !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem) !important;
+    animation: modal-sheet-in 180ms ease-out;
+  }
+  [role="dialog"].fixed.inset-0 > *::before {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: var(--border-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300" role="img" aria-label="Features de Nocodeveloper CRM">
+    <rect width="1280" height="300" fill="#070806"/>
+    <text x="40" y="26" font-family="Arial, Helvetica, sans-serif" font-size="10" font-weight="800" letter-spacing="2" fill="#C6F24E">LO QUE HACE NOCODEVELOPER</text>
+    <g transform="translate(40,42)">
+        <rect width="370" height="96" rx="16" fill="#11150F" stroke="#2C3827"/>
+        <circle cx="38" cy="48" r="18" fill="#C6F24E" fill-opacity=".12" stroke="#C6F24E" stroke-opacity=".3"/>
+        <g transform="translate(26,36)"><path d="M4 5h16v11H9l-5 4z" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <text x="70" y="36" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#F3F6E8">Bandeja en tiempo real</text>
+        <text x="70" y="58" font-family="Arial, Helvetica, sans-serif" font-size="10.5" fill="#8A977C">Conversaciones, estados y adjuntos sin recargar.</text>
+      </g><g transform="translate(455,42)">
+        <rect width="370" height="96" rx="16" fill="#11150F" stroke="#2C3827"/>
+        <circle cx="38" cy="48" r="18" fill="#C6F24E" fill-opacity=".12" stroke="#C6F24E" stroke-opacity=".3"/>
+        <g transform="translate(26,36)"><rect x="4" y="4" width="5" height="16" rx="1.5" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="10" y="4" width="5" height="11" rx="1.5" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><rect x="16" y="4" width="4" height="7" rx="1.5" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <text x="70" y="36" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#F3F6E8">Pipeline y contactos</text>
+        <text x="70" y="58" font-family="Arial, Helvetica, sans-serif" font-size="10.5" fill="#8A977C">Etapas, importación y ficha del cliente.</text>
+      </g><g transform="translate(870,42)">
+        <rect width="370" height="96" rx="16" fill="#11150F" stroke="#2C3827"/>
+        <circle cx="38" cy="48" r="18" fill="#C6F24E" fill-opacity=".12" stroke="#C6F24E" stroke-opacity=".3"/>
+        <g transform="translate(26,36)"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M18.5 15.5l.7 2 2 .7-2 .7-.7 2-.7-2-2-.7 2-.7z" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <text x="70" y="36" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#F3F6E8">Agente con tu conocimiento</text>
+        <text x="70" y="58" font-family="Arial, Helvetica, sans-serif" font-size="10.5" fill="#8A977C">Responde con el contexto de tu negocio.</text>
+      </g><g transform="translate(40,162)">
+        <rect width="370" height="96" rx="16" fill="#11150F" stroke="#2C3827"/>
+        <circle cx="38" cy="48" r="18" fill="#C6F24E" fill-opacity=".12" stroke="#C6F24E" stroke-opacity=".3"/>
+        <g transform="translate(26,36)"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <text x="70" y="36" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#F3F6E8">Laboratorio</text>
+        <text x="70" y="58" font-family="Arial, Helvetica, sans-serif" font-size="10.5" fill="#8A977C">Clientes simulados miden al agente antes de producción.</text>
+      </g><g transform="translate(455,162)">
+        <rect width="370" height="96" rx="16" fill="#11150F" stroke="#2C3827"/>
+        <circle cx="38" cy="48" r="18" fill="#C6F24E" fill-opacity=".12" stroke="#C6F24E" stroke-opacity=".3"/>
+        <g transform="translate(26,36)"><rect x="3" y="5" width="18" height="16" rx="2" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 10h18M8 3v4M16 3v4" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <text x="70" y="36" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#F3F6E8">Citas y resultados</text>
+        <text x="70" y="58" font-family="Arial, Helvetica, sans-serif" font-size="10.5" fill="#8A977C">Agenda, atribución y métricas de operación.</text>
+      </g><g transform="translate(870,162)">
+        <rect width="370" height="96" rx="16" fill="#11150F" stroke="#2C3827"/>
+        <circle cx="38" cy="48" r="18" fill="#C6F24E" fill-opacity=".12" stroke="#C6F24E" stroke-opacity=".3"/>
+        <g transform="translate(26,36)"><rect x="7" y="2" width="10" height="20" rx="2.5" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 18h4" fill="none" stroke="#C6F24E" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></g>
+        <text x="70" y="36" font-family="Arial, Helvetica, sans-serif" font-size="14" font-weight="800" fill="#F3F6E8">Móvil + PWA</text>
+        <text x="70" y="58" font-family="Arial, Helvetica, sans-serif" font-size="10.5" fill="#8A977C">Barra inferior, hojas y uso sin conexión.</text>
+      </g>
+  </svg>
