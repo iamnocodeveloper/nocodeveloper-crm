@@ -6,6 +6,7 @@ import { beforeAll, describe, expect, it, vi } from "vitest";
  */
 
 const insertedRows: Record<string, unknown>[] = [];
+const deletedTables: unknown[] = [];
 
 vi.mock("@/lib/db", () => ({
   getDb: () => ({
@@ -17,9 +18,15 @@ vi.mock("@/lib/db", () => ({
         };
       },
     }),
+    // 031: guardar Meta directo retira la conexión por Zernio.
+    delete: (table: unknown) => {
+      deletedTables.push(table);
+      return { where: () => Promise.resolve() };
+    },
   }),
   schema: {
     metaCredentials: { organizationId: "organization_id" },
+    whatsappZernioCredentials: { organizationId: "wz_organization_id" },
   },
 }));
 

@@ -16,6 +16,22 @@ import {
   markReconnectRequired,
 } from "@/server/whatsapp/credentials";
 import { callGraphSend, SendError } from "@/server/inbox/send";
+import {
+  getWhatsappZernioCredentialsByOrg,
+  markWhatsappZernioReconnectRequired,
+  type WhatsappZernioCredentials,
+} from "@/server/whatsapp/zernio-credentials";
+import { whatsappZernioEnabled } from "@/server/whatsapp/zernio-flag";
+import {
+  createZernioWaTemplate,
+  listZernioWaTemplates,
+  sendZernioWaTemplate,
+} from "@/server/whatsapp/zernio";
+
+/** 031 — La conexión por Zernio de la organización, si la bandera la permite. */
+async function zernioOf(organizationId: string): Promise<WhatsappZernioCredentials | null> {
+  return whatsappZernioEnabled() ? getWhatsappZernioCredentialsByOrg(organizationId) : null;
+}
 import { serializeMessage } from "@/server/inbox/ingest";
 import type { WebhookValue } from "@/server/inbox/webhook";
 
@@ -80,11 +96,13 @@ export async function createTemplate(
   const variableError = validateBodyVariables(input.body);
   if (variableError) throw new TemplateError("invalid", variableError);
 
-  const creds = await getCredentialsByOrg(organizationId);
-  if (!creds) {
+  // 031: con Zernio la plantilla se crea en Meta a través de su API.
+  const zernio = await zernioOf(organizationId);
+  const creds = zernio ? null : await getCredentialsByOrg(organizationId);
+  if (!zernio && !creds) {
     throw new TemplateError("not_connected", "Conecta tu número de WhatsApp primero");
   }
-  if (creds.status === "reconnect_required") {
+  if ((zernio ?? creds)!.status === "reconnect_required") {
     throw new TemplateError("reconnect_required", "Reconecta tu número antes de crear plantillas");
   }
 
@@ -104,11 +122,21 @@ export async function createTemplate(
   );
   let waTemplateId: string | null = null;
   try {
+    if (zernio) {
+      const res = await createZernioWaTemplate(zernio, {
+        name,
+        language: input.language,
+        category: input.category,
+        body: input.body,
+        examples: variableCount > 0 ? examples : [],
+      });
+      waTemplateId = res.id;
+    } else {
     const res = await graphRequest<{ id?: string; status?: string }>(
-      `${creds.wabaId}/message_templates`,
+      `${creds!.wabaId}/message_templates`,
       {
         method: "POST",
-        token: creds.token,
+        token: creds!.token,
         body: {
           name,
           language: input.language,
@@ -126,10 +154,12 @@ export async function createTemplate(
       }
     );
     waTemplateId = res.id ?? null;
+    }
   } catch (err) {
     if (err instanceof MetaApiError) {
       if (err.isAuthError) {
-        await markReconnectRequired(organizationId);
+        if (zernio) await markWhatsappZernioReconnectRequired(organizationId);
+        else await markReconnectRequired(organizationId);
         throw new TemplateError("reconnect_required", "El token expiró: reconecta el número");
       }
       if (err.status === 0 || err.status >= 500) {
@@ -190,8 +220,9 @@ function mapMetaStatus(
  * así que el pull es la vía universal (DV-VC-04/DV-VC-15).
  */
 export async function syncTemplates(organizationId: string): Promise<number> {
-  const creds = await getCredentialsByOrg(organizationId);
-  if (!creds) {
+  const zernio = await zernioOf(organizationId);
+  const creds = zernio ? null : await getCredentialsByOrg(organizationId);
+  if (!zernio && !creds) {
     throw new TemplateError("not_connected", "Conecta tu número de WhatsApp primero");
   }
 
@@ -199,13 +230,17 @@ export async function syncTemplates(organizationId: string): Promise<number> {
     data?: { id?: string; name?: string; language?: string; status?: string; category?: string; quality_score?: unknown; rejected_reason?: string }[];
   };
   try {
-    data = await graphRequest(`${creds.wabaId}/message_templates`, {
-      token: creds.token,
-    });
+    // 031: Zernio lee las plantillas en vivo de Meta, con la misma forma.
+    data = zernio
+      ? { data: await listZernioWaTemplates(zernio) }
+      : await graphRequest(`${creds!.wabaId}/message_templates`, {
+          token: creds!.token,
+        });
   } catch (err) {
     if (err instanceof MetaApiError) {
       if (err.isAuthError) {
-        await markReconnectRequired(organizationId);
+        if (zernio) await markWhatsappZernioReconnectRequired(organizationId);
+        else await markReconnectRequired(organizationId);
         throw new TemplateError("reconnect_required", "El token expiró: reconecta el número");
       }
       throw new TemplateError("meta_unavailable", "No se pudo consultar Meta");
@@ -279,6 +314,107 @@ export async function applyTemplateStatusEvent(
     );
 }
 
+/** Meta directo: la plantilla sale por Graph `/messages`. */
+async function sendTemplateByMeta(
+  organizationId: string,
+  contact: typeof schema.contact.$inferSelect,
+  template: TemplateRow,
+  values: string[]
+): Promise<string> {
+  const creds = await getCredentialsByOrg(organizationId);
+  if (!creds) throw new TemplateError("not_connected", "Sin número conectado");
+  if (creds.status === "reconnect_required") {
+    throw new TemplateError("reconnect_required", "Reconecta el número");
+  }
+
+  // 003: destinatario = teléfono normalizado o BSUID.
+  // 003: teléfono en `to`, BSUID en `recipient` — Meta los pide en campos
+  // distintos y mandar el BSUID en `to` devuelve 131026.
+  const destinatario = destinatarioMeta(
+    contact.phone ? normalizeRecipient(contact.phone) : null,
+    contact.waUserId
+  );
+  if (!destinatario) {
+    throw new TemplateError(
+      "meta_error",
+      "El contacto no tiene teléfono ni identidad de WhatsApp utilizable"
+    );
+  }
+
+  return callGraphSend(creds, {
+    messaging_product: "whatsapp",
+    ...destinatario,
+    type: "template",
+    template: {
+      name: template.name,
+      language: { code: template.language },
+      ...(values.length > 0
+        ? {
+            components: [
+              {
+                type: "body",
+                parameters: values.map((text) => ({ type: "text", text })),
+              },
+            ],
+          }
+        : {}),
+    },
+  });
+}
+
+/**
+ * 031 — Por Zernio: `POST /inbox/conversations` con la plantilla. Zernio pide
+ * el teléfono (sin `+`): un contacto solo con BSUID no puede recibir una
+ * plantilla por aquí, y se dice en vez de dejar que la API lo rechace.
+ */
+async function sendTemplateByZernio(
+  creds: WhatsappZernioCredentials,
+  input: {
+    conversation: typeof schema.conversation.$inferSelect;
+    phone: string | null;
+    name: string;
+    language: string;
+    params: string[];
+  }
+): Promise<string> {
+  if (creds.status === "reconnect_required") {
+    throw new TemplateError("reconnect_required", "Reconecta WhatsApp en Configuración");
+  }
+  if (!input.phone) {
+    throw new TemplateError(
+      "meta_error",
+      "Por Zernio la plantilla necesita el teléfono del contacto, y este no lo tiene"
+    );
+  }
+  try {
+    const res = await sendZernioWaTemplate(creds, {
+      phone: normalizeRecipient(input.phone),
+      name: input.name,
+      language: input.language,
+      params: input.params,
+    });
+    if (res.threadRef && res.threadRef !== input.conversation.channelThreadRef) {
+      await getDb()
+        .update(schema.conversation)
+        .set({ channelThreadRef: res.threadRef, updatedAt: new Date() })
+        .where(eq(schema.conversation.id, input.conversation.id));
+    }
+    return res.waMessageId;
+  } catch (err) {
+    if (err instanceof MetaApiError) {
+      if (err.isAuthError) {
+        await markWhatsappZernioReconnectRequired(creds.organizationId);
+        throw new TemplateError("reconnect_required", "La llave de Zernio expiró: reconecta WhatsApp");
+      }
+      if (err.status === 0 || err.status >= 500) {
+        throw new TemplateError("meta_unavailable", "Zernio no está disponible ahora");
+      }
+      throw new TemplateError("meta_error", err.message);
+    }
+    throw err;
+  }
+}
+
 /** Envía una plantilla APROBADA a una conversación (ventana cerrada, FR-051). */
 export async function sendTemplate(input: {
   organizationId: string;
@@ -346,45 +482,18 @@ export async function sendTemplate(input: {
     );
   }
 
-  const creds = await getCredentialsByOrg(input.organizationId);
-  if (!creds) throw new TemplateError("not_connected", "Sin número conectado");
-  if (creds.status === "reconnect_required") {
-    throw new TemplateError("reconnect_required", "Reconecta el número");
-  }
-
-  // 003: destinatario = teléfono normalizado o BSUID.
-  // 003: teléfono en `to`, BSUID en `recipient` — Meta los pide en campos
-  // distintos y mandar el BSUID en `to` devuelve 131026.
-  const destinatario = destinatarioMeta(
-    row.contact.phone ? normalizeRecipient(row.contact.phone) : null,
-    row.contact.waUserId
-  );
-  if (!destinatario) {
-    throw new TemplateError(
-      "meta_error",
-      "El contacto no tiene teléfono ni identidad de WhatsApp utilizable"
-    );
-  }
-
-  const waMessageId = await callGraphSend(creds, {
-    messaging_product: "whatsapp",
-    ...destinatario,
-    type: "template",
-    template: {
-      name: template.name,
-      language: { code: template.language },
-      ...(variableCount > 0
-        ? {
-            components: [
-              {
-                type: "body",
-                parameters: values.map((text) => ({ type: "text", text })),
-              },
-            ],
-          }
-        : {}),
-    },
-  });
+  // 031: por Zernio la plantilla abre (o retoma) su conversación y devuelve el
+  // hilo, que se guarda para poder responder cuando el cliente conteste.
+  const zernio = await zernioOf(input.organizationId);
+  const waMessageId = zernio
+    ? await sendTemplateByZernio(zernio, {
+        conversation: row.conversation,
+        phone: row.contact.phone,
+        name: template.name,
+        language: template.language,
+        params: values,
+      })
+    : await sendTemplateByMeta(input.organizationId, row.contact, template, values);
 
   const inserted = await db
     .insert(schema.message)

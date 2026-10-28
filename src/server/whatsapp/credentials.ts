@@ -110,6 +110,11 @@ export async function saveCredentials(input: {
         updatedAt: new Date(),
       },
     });
+  // 031: un solo transporte por organización. Conectar Meta directo retira la
+  // conexión por Zernio, si la había, para que el envío no tenga que elegir.
+  await db
+    .delete(schema.whatsappZernioCredentials)
+    .where(scoped(schema.whatsappZernioCredentials.organizationId, input.organizationId));
 }
 
 /**

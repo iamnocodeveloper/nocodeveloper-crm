@@ -33,6 +33,13 @@ import {
 } from "@/server/tiktok/credentials";
 import { sendTiktokText } from "@/server/tiktok/send";
 import {
+  getWhatsappZernioCredentialsByOrg,
+  markWhatsappZernioReconnectRequired,
+  type WhatsappZernioCredentials,
+} from "@/server/whatsapp/zernio-credentials";
+import { whatsappZernioEnabled } from "@/server/whatsapp/zernio-flag";
+import { sendZernioMessage } from "@/server/zernio";
+import {
   cabeOtroMensaje,
   salientesDesdeElUltimoEntrante,
 } from "@/server/inbox/outbound-cap";
@@ -93,6 +100,8 @@ type SendTarget = {
   messenger?: MessengerCredentials;
   /** 022: presente solo en conversaciones de TikTok. */
   tiktok?: TiktokCredentials;
+  /** 031: WhatsApp que sale por Zernio en vez de Meta directo. */
+  zernioWa?: WhatsappZernioCredentials;
   /**
    * 024: el envío sale con la etiqueta de agente humano. Lo decide el
    * pre-vuelo (`assertReplyWindow`), no cada canal por su cuenta.
@@ -305,6 +314,36 @@ async function prepareSend(
     );
   }
 
+  // 031: WhatsApp por Zernio. Misma ventana y mismas plantillas (es la misma
+  // Cloud API); cambia la puerta. Una organización tiene un solo transporte.
+  const zernioWa = whatsappZernioEnabled()
+    ? await getWhatsappZernioCredentialsByOrg(organizationId)
+    : null;
+  if (zernioWa) {
+    if (zernioWa.status === "reconnect_required") {
+      throw new SendError(
+        "reconnect_required",
+        "La llave de Zernio dejó de servir: reconecta WhatsApp en Configuración"
+      );
+    }
+    const zRecipient =
+      (row.contact.phone ? normalizeRecipient(row.contact.phone) : null) ??
+      row.contact.waUserId;
+    if (!zRecipient) {
+      throw new SendError(
+        "meta_error",
+        "El contacto no tiene teléfono ni identidad de WhatsApp utilizable"
+      );
+    }
+    return {
+      conversation: row.conversation,
+      credentials: null,
+      destinatario: { to: zRecipient },
+      recipient: zRecipient,
+      zernioWa,
+    };
+  }
+
   const credentials = await getCredentialsByOrg(organizationId);
   if (!credentials) {
     throw new SendError("not_connected", "No hay número de WhatsApp conectado");
@@ -436,7 +475,9 @@ export async function sendText(input: {
       ? await callMessengerSend(target, text)
       : target.tiktok
         ? await callTiktokSend(target, text)
-        : await callGraphSend(credentials!, {
+        : target.zernioWa
+          ? await callZernioWaSend(target, text)
+          : await callGraphSend(credentials!, {
           messaging_product: "whatsapp",
           ...target.destinatario,
           type: "text",
@@ -479,6 +520,13 @@ export async function sendMediaMessage(input: {
 
   const target = await prepareSend(input.conversationId, input.organizationId);
   const { credentials } = target;
+  // 031: los adjuntos salientes por Zernio aún no están; el texto sí.
+  if (target.zernioWa) {
+    throw new SendError(
+      "meta_error",
+      "Todavía no se pueden enviar adjuntos por WhatsApp con Zernio; manda el texto"
+    );
+  }
   const sendCaps = capabilitiesFor(target.conversation.channel);
   if (!sendCaps.outboundMedia) {
     throw new SendError(
@@ -822,6 +870,48 @@ async function callTiktokSend(target: SendTarget, text: string): Promise<string>
         throw new SendError(
           "meta_unavailable",
           "TikTok no está disponible en este momento; intenta de nuevo"
+        );
+      }
+      throw new SendError("meta_error", err.message);
+    }
+    throw err;
+  }
+}
+
+/**
+ * 031 — Envío de WhatsApp por Zernio. Responde dentro de la conversación de
+ * Zernio (el hilo que guardó la ingesta); la ventana ya la comprobó `prepareSend`.
+ * Fuera de ella, o sin hilo, la única vía es una plantilla.
+ */
+async function callZernioWaSend(target: SendTarget, text: string): Promise<string> {
+  const creds = target.zernioWa!;
+  if (!target.conversation.channelThreadRef) {
+    throw new SendError(
+      "window_closed",
+      "Esta conversación todavía no existe en Zernio: escríbele primero con una plantilla"
+    );
+  }
+  try {
+    const res = await sendZernioMessage({
+      token: creds.token,
+      accountId: creds.accountRef,
+      conversationId: target.conversation.channelThreadRef,
+      text,
+    });
+    return res.platformMessageId;
+  } catch (err) {
+    if (err instanceof MetaApiError) {
+      if (err.isAuthError) {
+        await markWhatsappZernioReconnectRequired(creds.organizationId);
+        throw new SendError(
+          "reconnect_required",
+          "La llave de Zernio expiró o fue revocada: reconecta WhatsApp"
+        );
+      }
+      if (err.status === 0 || err.status >= 500) {
+        throw new SendError(
+          "meta_unavailable",
+          "Zernio no está disponible en este momento; intenta de nuevo"
         );
       }
       throw new SendError("meta_error", err.message);

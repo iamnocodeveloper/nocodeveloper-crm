@@ -18,8 +18,15 @@ import { zernioFetch } from "@/server/zernio";
 /** Los canales que llegan por Zernio. */
 export type ZernioChannel = Exclude<Channel, "whatsapp">;
 
+/**
+ * 031 — Lo que puede conectarse por Zernio: los canales opcionales y, como
+ * transporte de la API oficial, WhatsApp (`WHATSAPP_ZERNIO`).
+ */
+export type ZernioConnKind = ZernioChannel | "whatsapp";
+
 /** Cómo llama Zernio a la plataforma de cada canal. */
-export const ZERNIO_PLATFORMS: Record<ZernioChannel, readonly string[]> = {
+export const ZERNIO_PLATFORMS: Record<ZernioConnKind, readonly string[]> = {
+  whatsapp: ["whatsapp"],
   instagram: ["instagram"],
   messenger: ["facebook", "messenger"],
   tiktok: ["tiktok"],
@@ -84,7 +91,7 @@ const MAX_CANDIDATES = 8;
 export function pickZernioAccount(
   accounts: readonly ZernioAccount[],
   ref: string | null | undefined,
-  channel: ZernioChannel
+  channel: ZernioConnKind
 ): PickResult {
   const platforms = ZERNIO_PLATFORMS[channel];
   const delCanal = accounts.filter((a) =>
@@ -149,7 +156,7 @@ export type Health = { level: "ok" | "warn" | "error"; message: string };
  */
 export function accountHealth(
   account: ZernioAccount | null | undefined,
-  channel: ZernioChannel,
+  channel: ZernioConnKind,
   now: Date = new Date()
 ): Health {
   if (!account) {

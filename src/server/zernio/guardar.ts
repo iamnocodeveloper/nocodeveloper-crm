@@ -4,7 +4,7 @@ import {
   fetchZernioAccounts,
   pickZernioAccount,
   type ZernioAccount,
-  type ZernioChannel,
+  type ZernioConnKind,
 } from "@/server/zernio/cuentas";
 
 /**
@@ -18,7 +18,7 @@ import {
 export async function resolveZernioAccount(
   token: string,
   accountRef: string | null | undefined,
-  channel: ZernioChannel
+  channel: ZernioConnKind
 ): Promise<{ ok: true; account: ZernioAccount } | { ok: false; response: Response }> {
   let accounts: ZernioAccount[];
   try {

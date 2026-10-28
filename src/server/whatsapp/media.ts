@@ -8,6 +8,8 @@ import {
   type Credentials,
 } from "@/server/whatsapp/credentials";
 import { isForbiddenUploadMime } from "@/server/whatsapp/media-headers";
+import { getWhatsappZernioCredentialsByOrg } from "@/server/whatsapp/zernio-credentials";
+import { ZERNIO_BASE } from "@/server/zernio";
 
 /**
  * 008 — Única frontera de media con la Graph API (constitución II: todo el
@@ -192,6 +194,53 @@ export async function downloadGraphMedia(
 }
 
 /**
+ * 031 — La URL de un adjunto entrante de WhatsApp por Zernio, si el asset lo
+ * es. Zernio la sirve en su propia API y pide la llave para bajarla.
+ */
+export function zernioMediaUrl(payload: unknown): string | null {
+  const p = payload as { url?: unknown; auth?: unknown } | null;
+  return p && p.auth === "zernio" && typeof p.url === "string" ? p.url : null;
+}
+
+/**
+ * Baja un adjunto de Zernio. La llave SOLO viaja al host de la API de Zernio:
+ * la URL llega en un webhook, y mandar la llave a cualquier sitio que diga un
+ * evento sería regalarla.
+ */
+export async function downloadZernioMedia(
+  token: string,
+  url: string,
+  maxBytes: number = MEDIA_LIMITS.document.maxBytes
+): Promise<{ data: Buffer; mimeType: string | null; fileSize: number }> {
+  let destino: URL;
+  try {
+    destino = new URL(url);
+  } catch {
+    throw new MediaFetchError("La URL del adjunto no es válida", true);
+  }
+  if (destino.origin !== new URL(ZERNIO_BASE).origin) {
+    throw new MediaFetchError("El adjunto no viene de la API de Zernio", true);
+  }
+  let res: Response;
+  try {
+    res = await fetch(destino, { headers: { Authorization: `Bearer ${token}` } });
+  } catch {
+    throw new MediaFetchError("No se pudo descargar el adjunto");
+  }
+  if (!res.ok) {
+    throw new MediaFetchError(
+      `La descarga devolvió ${res.status}`,
+      res.status === 404 || res.status === 410
+    );
+  }
+  const buf = Buffer.from(await res.arrayBuffer());
+  if (buf.byteLength > maxBytes) {
+    throw new MediaFetchError("El adjunto excede el límite de tamaño", true);
+  }
+  return { data: buf, mimeType: res.headers.get("content-type"), fileSize: buf.byteLength };
+}
+
+/**
  * Garantiza que el asset esté en disco (`fetchStatus=available`).
  * Se usa en la descarga in-process post-ingesta Y on-demand desde la ruta de
  * media. Nunca lanza hacia el webhook: el que llama decide qué hacer con el
@@ -210,16 +259,22 @@ export async function ensureAssetAvailable(
   const asset = rows[0];
   if (!asset || asset.organizationId !== organizationId) return null;
   if (asset.fetchStatus === "available") return asset;
-  if (!asset.waMediaId) return null; // location/contacts no tienen binario
+  const zernioUrl = asset.waMediaId ? null : zernioMediaUrl(asset.payload);
+  if (!asset.waMediaId && !zernioUrl) return null; // location/contacts no tienen binario
 
-  const creds = await getCredentialsByOrg(organizationId);
-  if (!creds) return null;
+  const download = async () => {
+    if (zernioUrl) {
+      const zc = await getWhatsappZernioCredentialsByOrg(organizationId);
+      return zc ? downloadZernioMedia(zc.token, zernioUrl) : null;
+    }
+    const creds = await getCredentialsByOrg(organizationId);
+    return creds ? downloadGraphMedia(creds.token, asset.waMediaId!) : null;
+  };
 
   try {
-    const { data, mimeType, fileSize } = await downloadGraphMedia(
-      creds.token,
-      asset.waMediaId
-    );
+    const bajado = await download();
+    if (!bajado) return null;
+    const { data, mimeType, fileSize } = bajado;
     const storagePath = await saveMediaFile(organizationId, assetId, data, mimeType ?? undefined);
     const updated = await db
       .update(schema.mediaAsset)

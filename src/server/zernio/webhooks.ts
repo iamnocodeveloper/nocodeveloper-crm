@@ -200,6 +200,8 @@ export async function ensureZernioWebhook(input: {
   acceptableUrls: readonly string[];
   accountIds: readonly string[];
   secret: string;
+  /** 031: eventos a suscribir; por defecto solo los mensajes entrantes. */
+  events?: readonly string[];
 }): Promise<{ created: boolean; id: string }> {
   const existentes = await fetchZernioWebhooks(input.token);
   const previo =
@@ -212,7 +214,7 @@ export async function ensureZernioWebhook(input: {
   const body = {
     name: previo?.name || input.name,
     url,
-    events: [ZERNIO_MESSAGE_EVENT],
+    events: input.events?.length ? [...new Set(input.events)] : [ZERNIO_MESSAGE_EVENT],
     secret: input.secret,
     isActive: true,
     accountIds: [...new Set(input.accountIds)],

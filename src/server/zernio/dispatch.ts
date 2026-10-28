@@ -13,7 +13,9 @@ import {
   healZernioAccountRef,
   storedZernioSecrets,
 } from "@/server/zernio/conexiones";
-import type { ZernioChannel } from "@/server/zernio/cuentas";
+import type { ZernioConnKind } from "@/server/zernio/cuentas";
+import { processZernioWhatsappEvent } from "@/server/whatsapp/zernio";
+import { whatsappZernioEnabled } from "@/server/whatsapp/zernio-flag";
 import {
   WEBHOOKS_RECHECK_MS,
   webhookSecretsFromZernio,
@@ -34,13 +36,15 @@ import {
  */
 
 /** A qué canal pertenece un evento, o null si no es de ninguno nuestro. */
-export function zernioTargetChannel(payload: unknown): ZernioChannel | null {
+export function zernioTargetChannel(payload: unknown): ZernioConnKind | null {
   const evt = payload as ZernioEvent | null;
   if (!evt || typeof evt !== "object") return null;
   const platform = zernioPlatform(evt);
   if (platform === "instagram") return "instagram";
   if (platform === "facebook" || platform === "messenger") return "messenger";
   if (platform === "tiktok") return "tiktok";
+  // 031: WhatsApp por Zernio (transporte de la API oficial, no un canal aparte).
+  if (platform === "whatsapp") return "whatsapp";
   return null;
 }
 
@@ -94,6 +98,21 @@ export async function isAuthenticZernioDelivery(
 export async function processZernioPayload(payload: unknown): Promise<void> {
   const channel = zernioTargetChannel(payload);
   if (!channel) return; // otra plataforma conectada a la misma llave: no es nuestra
+
+  if (channel === "whatsapp") {
+    if (!whatsappZernioEnabled()) {
+      console.warn("[zernio] evento de WhatsApp sin WHATSAPP_ZERNIO en esta instancia: descartado");
+      return;
+    }
+    await healZernioAccountRef(channel, (payload as ZernioEvent).account);
+    await processZernioWhatsappEvent(payload);
+    return;
+  }
+
+  // 031: si WhatsApp por Zernio comparte el webhook, también llegan salientes y
+  // acuses; los demás canales solo procesan mensajes entrantes.
+  const evento = (payload as { event?: string }).event;
+  if (evento && evento !== "message.received") return;
 
   if (!isChannelEnabled(channel)) {
     console.warn(

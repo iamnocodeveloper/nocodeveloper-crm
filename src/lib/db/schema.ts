@@ -670,6 +670,44 @@ export const tiktokCredentials = pgTable(
   ]
 );
 
+/**
+ * 031 — WhatsApp por Zernio: la API oficial a través de otro proveedor.
+ *
+ * Tabla aparte de `meta_credentials` a propósito: aquella tiene `waba_id`,
+ * `phone_number_id` y el token de Meta como NOT NULL y todo el CRM la lee como
+ * «Meta directo». Una organización usa UN transporte: guardar este borra la
+ * fila de Meta y viceversa (`server/whatsapp/zernio-credentials.ts`).
+ */
+export const whatsappZernioCredentials = pgTable(
+  "whatsapp_zernio_credentials",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    /** `accountId` de la cuenta de WhatsApp en Zernio: por él enruta el webhook. */
+    accountRef: text("account_ref").notNull(),
+    /** Número que se enseña en Ajustes, p. ej. `+52 55 1234 5678`. */
+    displayPhoneNumber: text("display_phone_number"),
+    tokenCipher: text("token_cipher").notNull(),
+    tokenIv: text("token_iv").notNull(),
+    tokenTag: text("token_tag").notNull(),
+    /** Secreto HMAC de las entregas de Zernio, cifrado como el token (030). */
+    webhookSecretCipher: text("webhook_secret_cipher"),
+    webhookSecretIv: text("webhook_secret_iv"),
+    webhookSecretTag: text("webhook_secret_tag"),
+    status: text("status", { enum: ["connected", "reconnect_required"] })
+      .notNull()
+      .default("connected"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("whatsapp_zernio_credentials_org_uq").on(t.organizationId),
+    uniqueIndex("whatsapp_zernio_credentials_account_ref_uq").on(t.accountRef),
+  ]
+);
+
 export const agentProfile = pgTable(
   "agent_profile",
   {

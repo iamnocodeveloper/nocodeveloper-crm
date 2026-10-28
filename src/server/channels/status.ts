@@ -129,6 +129,20 @@ export async function channelsStatus(organizationId: string): Promise<ChannelSta
     const base = { channel, lastInboundAt: ultimos[channel] ?? null };
 
     if (channel === "whatsapp") {
+      // 031: el número puede salir por Zernio en vez de Meta directo.
+      const wz = zernio.find((c) => c.channel === "whatsapp");
+      if (wz && !wa) {
+        const lectura = lecturas.get(wz.token) ?? null;
+        filas.push({
+          ...base,
+          connected: true,
+          source: "zernio",
+          account: wz.name,
+          status: wz.status,
+          health: saludDe(wz, lectura),
+        });
+        continue;
+      }
       filas.push({
         ...base,
         connected: Boolean(wa),

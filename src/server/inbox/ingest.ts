@@ -83,7 +83,7 @@ const BINARY_MEDIA_TYPES = new Set([
   "sticker",
 ] as const);
 
-type MediaInput = {
+export type MediaInput = {
   kind: (typeof schema.mediaAsset.$inferSelect)["kind"];
   waMediaId: string | null;
   mimeType: string | null;
@@ -350,18 +350,46 @@ async function ingestManualEcho(
   organizationId: string,
   echo: WebhookMessage
 ): Promise<void> {
-  const db = getDb();
   const identity = normalizeMx(echo.to!);
-
-  const { contact } = await getOrCreateContactByIdentity(organizationId, {
-    identity,
-    phone: identity,
-    waUserId: null,
-    profileName: null,
+  await ingestManualOutbound(organizationId, {
+    identity: { identity, phone: identity, waUserId: null, profileName: null },
+    waMessageId: echo.id,
+    type: echo.type,
+    text: echo.text?.body ?? null,
+    timestamp: echo.timestamp,
+    media: mediaInputFrom(echo),
+    pauseAi: true,
   });
-  const conversation = await getOrCreateConversation(organizationId, contact.id);
+}
 
-  const waTimestamp = toDate(echo.timestamp);
+/**
+ * 008/031 — Un saliente que NO salió de este CRM: lo escribió el dueño desde
+ * la app del teléfono (coexistencia, por Meta o por Zernio) o desde el panel
+ * del proveedor. Se registra `origin='manual'`; `pauseAi` lo decide quien
+ * llama (una persona respondiendo pausa la IA; una difusión, no).
+ */
+export async function ingestManualOutbound(
+  organizationId: string,
+  input: {
+    identity: ResolvedIdentity;
+    waMessageId: string;
+    type: string;
+    text: string | null;
+    timestamp: string;
+    media?: MediaInput | null;
+    /** 031: hilo del proveedor (Zernio) para poder responder después. */
+    threadRef?: string | null;
+    pauseAi: boolean;
+  }
+): Promise<void> {
+  const db = getDb();
+
+  const { contact } = await getOrCreateContactByIdentity(organizationId, input.identity);
+  const conversation = await getOrCreateConversation(organizationId, contact.id, {
+    threadRef: input.threadRef ?? null,
+  });
+
+  const waTimestamp = toDate(input.timestamp);
 
   // Idempotencia dura: los mensajes ya registrados (o echoes repetidos) no
   // duplican efectos — mismo wa_message_id → sin inserción ni handoff extra.
@@ -371,10 +399,10 @@ async function ingestManualEcho(
       id: newId("message"),
       organizationId,
       conversationId: conversation.id,
-      waMessageId: echo.id,
+      waMessageId: input.waMessageId,
       direction: "out",
-      type: echo.type,
-      text: echo.text?.body ?? null,
+      type: input.type,
+      text: input.text,
       status: "sent",
       origin: "manual",
       waTimestamp,
@@ -384,9 +412,8 @@ async function ingestManualEcho(
   const message = inserted[0];
   if (!message) return; // duplicado
 
-  const mediaInput = mediaInputFrom(echo);
-  const asset = mediaInput
-    ? await attachMediaAsset(organizationId, message.id, mediaInput)
+  const asset = input.media
+    ? await attachMediaAsset(organizationId, message.id, input.media)
     : null;
 
   // Solo lastMessageAt: un mensaje del negocio NUNCA abre la ventana de 24 h.
@@ -396,7 +423,8 @@ async function ingestManualEcho(
     .where(eq(schema.conversation.id, conversation.id));
 
   // Pausa automática de la IA, idempotente y atómica (solo si no hay handoff).
-  const paused = await db
+  // 031: una difusión o un flujo del proveedor no es una persona respondiendo.
+  const paused = !input.pauseAi ? [] : await db
     .update(schema.conversation)
     .set({
       aiEnabled: false,
