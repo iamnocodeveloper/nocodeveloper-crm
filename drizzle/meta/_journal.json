@@ -162,6 +162,13 @@
       "when": 1793155585056,
       "tag": "0022_whatsapp_zernio",
       "breakpoints": true
+    },
+    {
+      "idx": 23,
+      "version": "7",
+      "when": 1794099145539,
+      "tag": "0023_cuenta_de_mensajes",
+      "breakpoints": true
     }
   ]
 }
