@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
-import { Fraunces, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import localFont from "next/font/local";
 import { accentCssVariables, DEFAULT_BRANDING } from "@/lib/branding";
 import { faviconHref } from "@/lib/favicon";
 import { normalizeThemePreference, THEME_COOKIE } from "@/lib/theme";
@@ -10,25 +10,36 @@ import { productName } from "@/lib/channels";
 import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
-// Las tres voces de Nocodeveloper. next/font las descarga en BUILD y las sirve
-// self-hosted (sin CDN en runtime: soberanía).
-const spaceGrotesk = Space_Grotesk({
-  subsets: ["latin"],
+// Las tres voces de Nocodeveloper, dentro del repo (`./fonts`, subconjunto
+// latino, licencia OFL en `fonts/licencias/`). Antes next/font las bajaba de
+// Google en cada BUILD y un hipo de esa red tumbaba el despliegue (mismo
+// arreglo que Vocero 2.6.1); así ni el build ni el runtime salen a internet.
+const spaceGrotesk = localFont({
+  src: "./fonts/space-grotesk-latin-wght-normal.woff2",
+  weight: "300 700",
   variable: "--font-sans",
   display: "swap",
 });
-const fraunces = Fraunces({
-  subsets: ["latin"],
-  weight: ["400", "600"],
-  style: ["normal", "italic"],
+const fraunces = localFont({
+  src: [
+    { path: "./fonts/fraunces-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/fraunces-latin-400-italic.woff2", weight: "400", style: "italic" },
+    { path: "./fonts/fraunces-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/fraunces-latin-600-italic.woff2", weight: "600", style: "italic" },
+  ],
   variable: "--font-serif",
   display: "swap",
+  adjustFontFallback: "Times New Roman",
 });
-const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  weight: ["400", "500", "600"],
+const jetbrainsMono = localFont({
+  src: [
+    { path: "./fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/jetbrains-mono-latin-600-normal.woff2", weight: "600", style: "normal" },
+  ],
   variable: "--font-mono",
   display: "swap",
+  adjustFontFallback: false,
 });
 
 export const dynamic = "force-dynamic";
