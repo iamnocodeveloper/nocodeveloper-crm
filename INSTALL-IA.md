@@ -67,7 +67,9 @@ dentro: README → «Instalación» → «Otras plataformas».
 a propósito: la imagen ya la trae (`/data/media`, dentro del volumen de `/data`).
 
 Opcionales, que NO se preguntan (el usuario los agrega después; la guía de
-cada uno está en `.env.example`): `META_APP_SECRET`, `BOT_API_KEY`,
+cada uno está en `.env.example`): `META_APP_SECRET`, `META_APP_ID` +
+`META_EMBEDDED_CONFIG_ID` (botón «Conectar con Meta»; panel de Meta en
+[`docs/embedded-signup.md`](docs/embedded-signup.md)), `BOT_API_KEY`,
 `BRAIN_DISPATCH_URL` y `BRAIN_HEALTH_URL` (un cerebro externo como Nea),
 `AGENDA=on`, `ATRIBUCION=on` y `CHANNELS`.
 

@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { EmbeddedSignup } from "./embedded-signup";
 
 type Connection = {
   wabaId: string;
@@ -47,7 +48,10 @@ type MessagingAccountRegistration =
  * con uno por tarjeta, guardar con un token sin permiso dejaba el «registrado»
  * de un clic anterior al lado del aviso nuevo.
  */
-type LastRegistration = { result: WebhookRegistration; from: "save" | "button" };
+type LastRegistration = {
+  result: WebhookRegistration;
+  from: "save" | "button" | "embedded";
+};
 
 export function WhatsappWizard() {
   const [connection, setConnection] = useState<Connection | null>(null);
@@ -120,7 +124,22 @@ export function WhatsappWizard() {
         </div>
       )}
 
+      {/* 066 — La conexión oficial con Meta. Sin la app configurada en la
+          instancia no se dibuja y queda solo el alta manual de abajo. */}
+      <EmbeddedSignup
+        onConnected={(r) => {
+          setRegistration({ result: r.webhook as WebhookRegistration, from: "embedded" });
+          void refetch();
+        }}
+      />
+      {registration?.from === "embedded" && (
+        <RegistrationNotice registration={registration.result} afterSave />
+      )}
+
       <ConnectForm
+        // 066 — Se rehace si la conexión cambia por «Conectar con Meta»:
+        // los campos toman los IDs nuevos.
+        key={connection?.phoneNumberId ?? "sin-conexion"}
         existing={connection}
         registration={registration?.from === "save" ? registration.result : null}
         onRegistration={(result) =>

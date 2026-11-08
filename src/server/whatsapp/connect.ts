@@ -185,6 +185,7 @@ export async function registerWebhookForNumber(opts: {
     await unregisterWebhookForNumber({ phoneNumberId, token, webhookPath: ownPath });
     return { ok: true, skipped: "waba_override", host };
   }
+  let cuentaPartida = false;
   if (!override || (opts.forzar && !sameWebhookPath(override, ownPath))) {
     if (override) {
       console.log(
@@ -194,7 +195,13 @@ export async function registerWebhookForNumber(opts: {
     try {
       await graphRequest(`${wabaId}/subscribed_apps`, { method: "POST", token });
     } catch (err) {
-      return registrationError(err, "No se pudo suscribir la app a la cuenta de WhatsApp");
+      // 066 — Desde el 28-oct-2026 Meta responde 2388339 aquí en las cuentas
+      // ya partidas: lo que hace llegar los mensajes es la Cuenta de
+      // mensajes. Se decide abajo, con su resultado a la vista.
+      if (!esCuentaPartida(err)) {
+        return registrationError(err, "No se pudo suscribir la app a la cuenta de WhatsApp");
+      }
+      cuentaPartida = true;
     }
   }
 
@@ -211,6 +218,21 @@ export async function registerWebhookForNumber(opts: {
           forzar: opts.forzar,
         })
       : undefined;
+
+  if (cuentaPartida) {
+    if (!messagingAccount) {
+      return {
+        ok: false,
+        code: "meta_error",
+        message:
+          "Meta ya no acepta suscribir la app en la cuenta de WhatsApp (#100/2388339, el split de 2026): escribe el ID de la Cuenta de mensajes y vuelve a registrar el webhook.",
+      };
+    }
+    if (!messagingAccount.ok) return messagingAccount;
+    console.log(
+      `[connect] la cuenta de WhatsApp ${wabaId} respondió 2388339; la de mensajes quedó suscrita y se sigue`
+    );
+  }
 
   try {
     await graphRequest(phoneNumberId, {
@@ -486,6 +508,11 @@ function messagingAccountError(
     ...res,
     message: `${context}: el usuario del sistema no tiene asignada la Cuenta de mensajes (Usuarios del sistema › Asignar activos › Messaging accounts). El mismo token sirve en cuanto se asigna.`,
   };
+}
+
+/** 066 — `#100` subcode `2388339`: la cuenta de WhatsApp ya está partida. */
+function esCuentaPartida(err: unknown): boolean {
+  return err instanceof MetaApiError && err.subcode === 2388339;
 }
 
 function sameWebhookPath(url: string, path: string): boolean {
