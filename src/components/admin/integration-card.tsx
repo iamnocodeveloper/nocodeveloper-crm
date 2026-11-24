@@ -37,7 +37,10 @@ export function IntegrationCard({
   async function save() {
     setBusy("save");
     setMsg(null);
-    const body: Record<string, unknown> = { enabled, config };
+    // Pegar una llave nueva ya es querer usarla: se activa sola.
+    const activar = enabled || Boolean(apiKey.trim());
+    if (activar !== enabled) setEnabled(activar);
+    const body: Record<string, unknown> = { enabled: activar, config };
     // Solo se manda la llave si se escribió una nueva: vacío = no tocar.
     if (apiKey.trim()) body.apiKey = apiKey;
     if (webhookSecret.trim()) body.webhookSecret = webhookSecret;
@@ -137,25 +140,13 @@ export function IntegrationCard({
           />
         </div>
         {isZernio && (
-          <>
-            <div className="space-y-1.5">
-              <Label htmlFor="zernio-whsec">Secreto de firma del webhook (opcional: si lo dejas vacío, Kooni crea uno)</Label>
-              <Input
-                id="zernio-whsec"
-                type="password"
-                autoComplete="off"
-                placeholder={integration.hasWebhookSecret ? "•••••••• (escribe para cambiarlo)" : "El que te da Zernio al crear el webhook"}
-                value={webhookSecret}
-                onChange={(e) => setWebhookSecret(e.target.value)}
-              />
-            </div>
+          <p className="rounded-md border bg-secondary px-3 py-2 text-xs text-text-2">
+            <strong>No hay que pegar nada en Zernio.</strong> Al guardar, Kooni crea solo el webhook en tu
+            cuenta de Zernio{integration.hasWebhookSecret ? " (ya está creado y firmado)" : ""}.
             {webhookUrl && (
-              <div className="space-y-1.5">
-                <Label>URL del webhook para pegar en Zernio</Label>
-                <code className="block break-all rounded-md border bg-secondary px-3 py-2 text-xs">{webhookUrl}</code>
-              </div>
+              <span className="mt-1 block break-all opacity-70">Apunta a: {webhookUrl}</span>
             )}
-          </>
+          </p>
         )}
       </div>
 

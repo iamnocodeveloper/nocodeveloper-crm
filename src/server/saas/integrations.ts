@@ -29,10 +29,9 @@ export const INTEGRATION_FIELDS: Record<
   zernio: {
     title: "Zernio (WhatsApp oficial con coexistencia)",
     description:
-      "Tu cuenta de Zernio para todos los negocios: cada negocio es un perfil y solo conecta su número.",
-    fields: [
-      { name: "baseUrl", label: "URL de la API", placeholder: "https://zernio.com/api/v1" },
-    ],
+      "Tu cuenta de Zernio para todos los negocios: cada negocio es un perfil y solo conecta su número. Pega la llave, activa y guarda: la URL de la API y el webhook se configuran solos.",
+    // K5 — Nada que rellenar salvo la llave: la API es siempre la de Zernio.
+    fields: [],
   },
 };
 

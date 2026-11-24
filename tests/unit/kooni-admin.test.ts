@@ -35,9 +35,9 @@ describe("integraciones", () => {
     expect(isIntegrationKey("")).toBe(false);
   });
 
-  it("WAHA pide URL y motor; Zernio su URL", () => {
+  it("WAHA pide URL y motor; Zernio solo la llave", () => {
     expect(INTEGRATION_FIELDS.waha.fields.map((f) => f.name)).toContain("baseUrl");
-    expect(INTEGRATION_FIELDS.zernio.fields.map((f) => f.name)).toContain("baseUrl");
+    expect(INTEGRATION_FIELDS.zernio.fields).toEqual([]);
   });
 
   it("cleanConfig descarta campos desconocidos, vacíos y la barra final", () => {
