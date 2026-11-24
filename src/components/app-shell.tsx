@@ -31,10 +31,13 @@ export function AppShell({
   apariencia,
   commit,
   agenda = false,
+  superadmin = false,
   kicker,
   aviso = null,
   children,
 }: {
+  /** K4 — ¿quien mira administra la plataforma? */
+  superadmin?: boolean;
   branding: Branding;
   userName: string;
   role: string;
@@ -95,6 +98,7 @@ export function AppShell({
         role={role}
         apariencia={apariencia}
         agenda={agenda}
+        superadmin={superadmin}
         kicker={kicker}
         open={navOpen}
         onClose={() => setNavOpen(false)}

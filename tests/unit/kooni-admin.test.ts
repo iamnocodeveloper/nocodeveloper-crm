@@ -7,6 +7,25 @@ vi.mock("@/lib/crypto", () => ({ encryptSecret: vi.fn(), decryptSecret: vi.fn() 
 
 import { cleanConfig, isIntegrationKey, INTEGRATION_FIELDS } from "@/server/saas/integrations";
 import { planSchema } from "@/server/saas/plan-schema";
+import { siguienteSeguro } from "@/lib/oauth-next";
+import { appNavGroups } from "@/lib/nav";
+
+describe("acceso al panel", () => {
+  it("tras entrar se vuelve a /admin, pero no a cualquier sitio", () => {
+    expect(siguienteSeguro("/admin")).toBe("/admin");
+    expect(siguienteSeguro("/admin/negocios")).toBe("/admin/negocios");
+    expect(siguienteSeguro("//evil.com/admin")).toBeNull();
+    expect(siguienteSeguro("/admin/../x")).toBeNull();
+    expect(siguienteSeguro("https://evil.com")).toBeNull();
+    expect(siguienteSeguro("/inbox")).toBeNull();
+  });
+
+  it("«Administración» solo en el menú de un superadmin", () => {
+    const hrefs = (s: boolean) => appNavGroups({ superadmin: s }).flatMap((g) => g.items.map((i) => i.href));
+    expect(hrefs(true)).toContain("/admin");
+    expect(hrefs(false)).not.toContain("/admin");
+  });
+});
 
 describe("integraciones", () => {
   it("solo waha y zernio", () => {

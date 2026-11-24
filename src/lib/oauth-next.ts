@@ -7,8 +7,9 @@
  * el navegador.
  */
 export function siguienteSeguro(next: string | string[] | undefined): string | null {
-  if (typeof next !== "string" || !next.startsWith("/oauth/authorize?") || next.includes("//") || next.includes("\\")) {
-    return null;
-  }
+  if (typeof next !== "string" || next.includes("//") || next.includes("\\")) return null;
+  // K4 — También el panel del superadmin, para volver a él tras entrar.
+  const esAdmin = next === "/admin" || /^\/admin\/[a-z0-9/_-]*$/i.test(next);
+  if (!next.startsWith("/oauth/authorize?") && !esAdmin) return null;
   return next;
 }

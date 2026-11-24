@@ -13,7 +13,7 @@ import { navKicker } from "@/lib/channels";
 import { avisoIaDe } from "@/server/ai/aviso";
 import { AvisoIaBanner } from "@/components/avisos/aviso-ia";
 import { AvisoCuentaBanner } from "@/components/avisos/aviso-cuenta";
-import { saasModeEnabled } from "@/server/saas/mode";
+import { isSuperadminEmail, saasModeEnabled } from "@/server/saas/mode";
 import { avisoCuentaDe, getTenant } from "@/server/saas/tenant";
 
 export default async function AppLayout({
@@ -48,6 +48,7 @@ export default async function AppLayout({
       // prop, igual que los canales de la Bandeja. El nav es un componente de
       // cliente: no puede —ni debe— leer variables de entorno.
       agenda={agendaEnabled()}
+      superadmin={isSuperadminEmail(authSession?.user.email)}
       kicker={navKicker([...enabledChannels()])}
       aviso={
         <>

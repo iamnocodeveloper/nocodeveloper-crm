@@ -6,6 +6,7 @@ import {
   Kanban,
   ListChecks,
   Settings,
+  ShieldCheck,
   Sparkles,
   Users,
   type LucideIcon,
@@ -50,9 +51,12 @@ export const SETTINGS_ITEM: NavItem = {
 export function appNavGroups({
   agenda = false,
   role,
+  superadmin = false,
 }: {
   /** 015 — "Citas" solo existe si esta instancia encendió la agenda. */
   agenda?: boolean;
+  /** K4 — ¿quien mira administra la plataforma? Lo decide el servidor. */
+  superadmin?: boolean;
   /** #86 — La guía de inicio solo para quien puede configurar. */
   role?: string | null;
 }): NavGroup[] {
@@ -75,12 +79,17 @@ export function appNavGroups({
     { href: "/lab", label: "Laboratorio", icon: FlaskConical }
   );
 
-  return [
+  const grupos: NavGroup[] = [
     { title: "Trabajo", items: trabajo },
     { title: "Agente", items: agente },
     // 019 — Se mide al final: primero se atiende y se organiza.
     { items: [{ href: "/results", label: "Resultados", icon: ChartColumn }] },
   ];
+  // K4 — El panel de la plataforma, solo para los superadmins.
+  if (superadmin) {
+    grupos.push({ items: [{ href: "/admin", label: "Administración", icon: ShieldCheck }] });
+  }
+  return grupos;
 }
 
 export type SettingsLink = { href: string; label: string };
