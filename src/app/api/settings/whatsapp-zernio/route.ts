@@ -12,6 +12,8 @@ import { webhookUrl } from "@/server/whatsapp/webhook-url";
 import { ensureWebhookForOrg } from "@/server/zernio/conexiones";
 import { accountHealth, zernioAccountName } from "@/server/zernio/cuentas";
 import { resolveZernioAccount } from "@/server/zernio/guardar";
+import { zernioPlataforma } from "@/server/zernio/plataforma";
+import { zernioFetch } from "@/server/zernio";
 
 export const dynamic = "force-dynamic";
 
@@ -21,13 +23,17 @@ export const GET = withAuth(async (session) => {
   const creds = await getWhatsappZernioCredentialsByOrg(session.organizationId);
   return Response.json({
     webhookUrl: webhookUrl("zernio"),
+    // K5 — ¿la plataforma ofrece «Conectar» con su cuenta de Zernio?
+    platformAvailable: Boolean(await zernioPlataforma()),
     connection: creds
       ? {
           accountRef: creds.accountRef,
           displayPhoneNumber: creds.displayPhoneNumber,
           status: creds.status,
-          tokenLast4: tokenLast4(creds.token),
+          // La llave de la plataforma no se enseña, ni su cola.
+          tokenLast4: creds.platform ? "" : tokenLast4(creds.token),
           hasWebhookSecret: Boolean(creds.webhookSecret),
+          platform: creds.platform,
         }
       : null,
   });
@@ -85,6 +91,16 @@ export const DELETE = withAuth(async (session) => {
   if (!whatsappZernioEnabled()) return channelDisabledResponse();
   if (session.role !== "owner") {
     return apiError(403, "forbidden", "Solo el propietario puede desconectar WhatsApp");
+  }
+  // K5 — Con la cuenta de la plataforma, el número también se quita de Zernio:
+  // si no, se seguiría pagando una cuenta que ningún negocio usa.
+  const creds = await getWhatsappZernioCredentialsByOrg(session.organizationId);
+  if (creds?.platform && creds.token) {
+    await zernioFetch(`/accounts/${encodeURIComponent(creds.accountRef)}`, {
+      method: "DELETE",
+      token: creds.token,
+      timeoutMs: 15_000,
+    }).catch((err) => console.error("[zernio-plataforma] no se pudo quitar la cuenta:", err));
   }
   await deleteWhatsappZernioCredentials(session.organizationId);
   return Response.json({ ok: true });

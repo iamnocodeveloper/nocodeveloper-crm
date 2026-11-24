@@ -125,6 +125,14 @@ export async function saveIntegration(
     .onConflictDoUpdate({ target: schema.saasIntegration.key, set: patch });
 }
 
+/** K5 — Guarda solo el secreto de firma (lo genera Kooni al crear el webhook). */
+export async function setIntegrationWebhookSecret(key: IntegrationKey, secret: string): Promise<void> {
+  await getDb()
+    .update(schema.saasIntegration)
+    .set({ webhookSecret: encryptSecret(secret), updatedAt: new Date() })
+    .where(eq(schema.saasIntegration.key, key));
+}
+
 /** Para el código que habla con el proveedor: config + llave en claro. */
 export async function getIntegrationCredentials(key: IntegrationKey): Promise<{
   enabled: boolean;

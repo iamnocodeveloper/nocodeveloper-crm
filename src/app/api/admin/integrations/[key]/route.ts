@@ -2,6 +2,7 @@ import { z } from "zod";
 import { apiError, parseBody } from "@/lib/api";
 import { audit, withSuperadmin } from "@/server/saas/admin";
 import { isIntegrationKey, saveIntegration } from "@/server/saas/integrations";
+import { asegurarWebhookPlataforma } from "@/server/zernio/plataforma";
 
 export const dynamic = "force-dynamic";
 
@@ -28,5 +29,8 @@ export const PUT = withSuperadmin(async (admin, req: Request, { params }: Params
     apiKeyChanged: body.data.apiKey !== undefined,
     webhookSecretChanged: body.data.webhookSecret !== undefined,
   });
-  return Response.json({ ok: true });
+  // K5 — Con Zernio encendido se deja listo el webhook único de la plataforma.
+  const webhook =
+    key === "zernio" && body.data.enabled ? await asegurarWebhookPlataforma() : null;
+  return Response.json({ ok: true, webhook });
 });

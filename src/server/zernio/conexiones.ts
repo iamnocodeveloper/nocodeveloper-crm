@@ -35,6 +35,7 @@ import {
 import { whatsappZernioEnabled } from "@/server/whatsapp/zernio-flag";
 import { ZERNIO_WA_EVENTS } from "@/server/whatsapp/zernio-events";
 import { columnasDelSecreto } from "@/server/zernio/secreto-guardado";
+import { asegurarWebhookPlataforma } from "@/server/zernio/plataforma";
 import {
   cachedZernioWebhooks,
   ensureZernioWebhook,
@@ -74,6 +75,8 @@ export type ZernioConnection = {
   /** Nombre con el que una persona reconoce la cuenta. */
   name: string | null;
   status: "connected" | "reconnect_required";
+  /** K5 — Conexión con la cuenta de Zernio de la plataforma (webhook compartido). */
+  platform?: boolean;
 };
 
 const arroba = (u: string | null) => (u ? `@${u.replace(/^@/, "")}` : null);
@@ -85,7 +88,7 @@ async function byOrg(
   if (channel === "whatsapp") {
     const c = await getWhatsappZernioCredentialsByOrg(organizationId);
     if (!c) return null;
-    return { channel, ...comun(c), accountRef: c.accountRef, name: c.displayPhoneNumber };
+    return { channel, ...comun(c), accountRef: c.accountRef, name: c.displayPhoneNumber, platform: c.platform };
   }
   if (channel === "instagram") {
     const c = await getInstagramCredentialsByOrg(organizationId);
@@ -109,7 +112,7 @@ async function byAccountRef(
   if (channel === "whatsapp") {
     const c = await getWhatsappZernioCredentialsByAccountRef(accountRef);
     if (!c) return null;
-    return { channel, ...comun(c), accountRef: c.accountRef, name: c.displayPhoneNumber };
+    return { channel, ...comun(c), accountRef: c.accountRef, name: c.displayPhoneNumber, platform: c.platform };
   }
   if (channel === "instagram") {
     const c = await getInstagramCredentialsByAccountRef(accountRef);
@@ -276,7 +279,16 @@ export async function ensureWebhookForOrg(
   organizationId: string,
   opts: { secret?: string | null } = {}
 ): Promise<EnsureWebhookResult> {
-  const conns = await zernioConnectionsOfOrg(organizationId);
+  const todas = await zernioConnectionsOfOrg(organizationId);
+  // K5 — Lo conectado con la cuenta de la plataforma va por SU webhook, que
+  // cubre a todos los negocios. Tocarlo desde aquí lo recortaría a las
+  // cuentas de este negocio y dejaría a los demás sin mensajes.
+  const dePlataforma = todas.filter((c) => c.platform);
+  if (dePlataforma.length > 0) await asegurarWebhookPlataforma();
+  const conns = todas.filter((c) => !c.platform);
+  if (conns.length === 0 && dePlataforma.length > 0) {
+    return { ok: true, created: false, accounts: dePlataforma.length };
+  }
   if (conns.length === 0) {
     return {
       ok: false,

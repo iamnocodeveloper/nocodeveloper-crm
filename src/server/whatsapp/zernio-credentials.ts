@@ -3,6 +3,7 @@ import { getDb, schema } from "@/lib/db";
 import { newId } from "@/lib/db/ids";
 import { decryptSecret, encryptSecret } from "@/lib/crypto";
 import { scoped } from "@/lib/db/tenant";
+import { getIntegrationCredentials } from "@/server/saas/integrations";
 
 /**
  * 031 — Credenciales de WhatsApp por Zernio.
@@ -23,9 +24,38 @@ export type WhatsappZernioCredentials = {
   webhookSecret: string | null;
   status: "connected" | "reconnect_required";
   token: string;
+  /**
+   * K5 — Conectado con la cuenta de Zernio de la PLATAFORMA (la llave vive en
+   * /admin → Integraciones, no en esta fila). Su webhook es uno solo para
+   * todos los negocios y lo gestiona `zernio/plataforma.ts`.
+   */
+  platform: boolean;
 };
 
+/**
+ * K5 — Lo que se guarda como «llave» en una conexión hecha con la cuenta de la
+ * plataforma. Al leer se sustituye por la llave real, así rotarla en el panel
+ * no obliga a reconectar a ningún negocio.
+ */
+export const PLATFORM_TOKEN = "__plataforma__";
+
 type Row = typeof schema.whatsappZernioCredentials.$inferSelect;
+
+/** K5 — Cambia el marcador por la llave y el secreto de la plataforma. */
+async function conPlataforma(
+  c: WhatsappZernioCredentials | null
+): Promise<WhatsappZernioCredentials | null> {
+  if (!c || c.token !== PLATFORM_TOKEN) return c;
+  const p = await getIntegrationCredentials("zernio");
+  return {
+    ...c,
+    platform: true,
+    token: p?.apiKey ?? "",
+    webhookSecret: p?.webhookSecret ?? null,
+    // Sin llave en la plataforma no se puede enviar: que la UI lo diga.
+    status: p?.apiKey ? c.status : "reconnect_required",
+  };
+}
 
 function toCredentials(row: Row): WhatsappZernioCredentials {
   const secret =
@@ -48,6 +78,7 @@ function toCredentials(row: Row): WhatsappZernioCredentials {
       iv: row.tokenIv,
       tag: row.tokenTag,
     }),
+    platform: false,
   };
 }
 
@@ -72,7 +103,7 @@ export async function getWhatsappZernioCredentialsByOrg(
     .from(schema.whatsappZernioCredentials)
     .where(scoped(schema.whatsappZernioCredentials.organizationId, organizationId))
     .limit(1);
-  return rows[0] ? toCredentials(rows[0]) : null;
+  return conPlataforma(rows[0] ? toCredentials(rows[0]) : null);
 }
 
 /** Enrutado del webhook de Zernio: el evento trae `account.id`. */
@@ -84,7 +115,7 @@ export async function getWhatsappZernioCredentialsByAccountRef(
     .from(schema.whatsappZernioCredentials)
     .where(eq(schema.whatsappZernioCredentials.accountRef, accountRef))
     .limit(1);
-  return rows[0] ? toCredentials(rows[0]) : null;
+  return conPlataforma(rows[0] ? toCredentials(rows[0]) : null);
 }
 
 /**

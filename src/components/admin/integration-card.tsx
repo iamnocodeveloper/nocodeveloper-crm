@@ -50,7 +50,17 @@ export function IntegrationCard({
     if (res.ok) {
       setApiKey("");
       setWebhookSecret("");
-      setMsg({ ok: true, text: "Guardado." });
+      const j = (await res.json().catch(() => null)) as
+        | { webhook?: { ok: boolean; creado?: boolean; message?: string } | null }
+        | null;
+      const w = j?.webhook;
+      setMsg(
+        !w
+          ? { ok: true, text: "Guardado." }
+          : w.ok
+            ? { ok: true, text: `Guardado. Webhook de Zernio ${w.creado ? "creado" : "actualizado"}: ya puedes conectar negocios.` }
+            : { ok: false, text: `Guardado, pero el webhook de Zernio falló: ${w.message ?? "error"}` }
+      );
       router.refresh();
     } else {
       const j = (await res.json().catch(() => null)) as { error?: { message?: string } } | null;
@@ -129,7 +139,7 @@ export function IntegrationCard({
         {isZernio && (
           <>
             <div className="space-y-1.5">
-              <Label htmlFor="zernio-whsec">Secreto de firma del webhook (opcional)</Label>
+              <Label htmlFor="zernio-whsec">Secreto de firma del webhook (opcional: si lo dejas vacío, Kooni crea uno)</Label>
               <Input
                 id="zernio-whsec"
                 type="password"
