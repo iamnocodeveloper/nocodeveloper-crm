@@ -1,6 +1,7 @@
 import { WhatsappWizard } from "@/components/settings/whatsapp-wizard";
 import { WhatsappZernioCard } from "@/components/settings/whatsapp-zernio-card";
 import { whatsappZernioEnabled } from "@/server/whatsapp/zernio-flag";
+import { saasModeEnabled } from "@/server/saas/mode";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,7 @@ export default function WhatsappSettingsPage() {
   return (
     <div className="space-y-8">
       <WhatsappWizard />
-      {whatsappZernioEnabled() && <WhatsappZernioCard />}
+      {whatsappZernioEnabled() && <WhatsappZernioCard manual={!saasModeEnabled()} />}
     </div>
   );
 }

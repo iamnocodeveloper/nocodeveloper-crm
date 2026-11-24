@@ -293,7 +293,7 @@ export async function ensureWebhookForOrg(
     return {
       ok: false,
       code: "sin_conexiones",
-      message: "No hay ningún canal conectado por Zernio.",
+      message: "No hay ningún canal conectado por el proveedor.",
     };
   }
 
@@ -306,7 +306,7 @@ export async function ensureWebhookForOrg(
       ok: false,
       code: "sin_https",
       message:
-        "Esta instancia no tiene una URL pública con https (APP_BASE_URL): Zernio no puede entregarle mensajes.",
+        "Esta instancia no tiene una URL pública con https (APP_BASE_URL): El proveedor no puede entregarle mensajes.",
     };
   }
 
@@ -368,12 +368,12 @@ export async function ensureWebhookForOrg(
       ? {
           ok: false,
           code: "zernio_unavailable",
-          message: "No se pudo contactar a Zernio para dar de alta el webhook. Reinténtalo desde Canales → Estado.",
+          message: "No se pudo contactar al proveedor para dar de alta el webhook. Reinténtalo desde Canales → Estado.",
         }
       : {
           ok: false,
           code: "zernio_rejected",
-          message: "Zernio no aceptó el webhook. Reinténtalo desde Canales → Estado o créalo a mano en Zernio.",
+          message: "El proveedor no aceptó el webhook. Reinténtalo desde Canales → Estado o créalo a mano en el proveedor.",
         };
   }
 }

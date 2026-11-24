@@ -22,30 +22,30 @@ export async function GET(req: Request) {
   const base = getEnv().APP_BASE_URL.replace(/\/$/, "");
   const volver = (q: string) => Response.redirect(`${base}/settings/whatsapp?${q}`, 303);
 
-  if (!whatsappZernioEnabled()) return volver("zernio=error&motivo=desactivado");
+  if (!whatsappZernioEnabled()) return volver("conexion=error&motivo=desactivado");
   let session;
   try {
     session = await requireSession();
   } catch {
     return Response.redirect(`${base}/login`, 303);
   }
-  if (session.role !== "owner") return volver("zernio=error&motivo=solo_propietario");
+  if (session.role !== "owner") return volver("conexion=error&motivo=solo_propietario");
 
   const url = new URL(req.url);
   const error = url.searchParams.get("error");
-  if (error) return volver(`zernio=error&motivo=${encodeURIComponent(error.slice(0, 60))}`);
+  if (error) return volver(`conexion=error&motivo=${encodeURIComponent(error.slice(0, 60))}`);
 
   const accountId = url.searchParams.get("accountId");
   const profileId = url.searchParams.get("profileId");
   const telefono = url.searchParams.get("username");
-  if (!accountId || !profileId) return volver("zernio=error&motivo=respuesta_incompleta");
+  if (!accountId || !profileId) return volver("conexion=error&motivo=respuesta_incompleta");
 
   const p = await zernioPlataforma();
-  if (!p) return volver("zernio=error&motivo=sin_plataforma");
+  if (!p) return volver("conexion=error&motivo=sin_plataforma");
 
   try {
     if (!(await perfilEsDelNegocio(p.apiKey, profileId, session.organizationId))) {
-      return volver("zernio=error&motivo=perfil_ajeno");
+      return volver("conexion=error&motivo=perfil_ajeno");
     }
     // Filtrado por el perfil: con una llave para todos los negocios, la lista
     // completa puede pasar de las 500 cuentas que Zernio devuelve sin paginar.
@@ -55,7 +55,7 @@ export async function GET(req: Request) {
     )) as { accounts?: ZernioAccount[] } | null;
     const cuentas = Array.isArray(json?.accounts) ? json.accounts : [];
     const cuenta = cuentas.find((a) => a._id === accountId && a.platform === "whatsapp");
-    if (!cuenta) return volver("zernio=error&motivo=cuenta_no_encontrada");
+    if (!cuenta) return volver("conexion=error&motivo=cuenta_no_encontrada");
 
     await saveWhatsappZernioCredentials({
       organizationId: session.organizationId,
@@ -68,9 +68,9 @@ export async function GET(req: Request) {
     });
     const webhook = await asegurarWebhookPlataforma();
     if (!webhook.ok) console.error("[zernio-plataforma] webhook:", webhook.message);
-    return volver("zernio=conectado");
+    return volver("conexion=conectado");
   } catch (err) {
     console.error("[zernio-plataforma] error al cerrar la conexión:", err);
-    return volver("zernio=error&motivo=zernio_error");
+    return volver("conexion=error&motivo=zernio_error");
   }
 }

@@ -32,8 +32,8 @@ type Connection = {
 };
 
 const PASOS_MANUAL = [
-  "Conecta el número en el panel de Zernio (Accounts → Connect → WhatsApp). Si quieres seguir usando la app de WhatsApp Business en el teléfono, elige coexistencia.",
-  "Crea la API key en Zernio → Settings → API Keys (empieza con sk_) y pégala abajo.",
+  "Conecta el número en el panel de tu proveedor (Accounts → Connect → WhatsApp). Si quieres seguir usando la app de WhatsApp Business en el teléfono, elige coexistencia.",
+  "Crea la API key en el proveedor → Settings → API Keys (empieza con sk_) y pégala abajo.",
   "Para escribir primero, o pasadas 24 h desde el último mensaje del cliente, necesitas una plantilla aprobada (Ajustes → Plantillas).",
 ];
 
@@ -46,11 +46,11 @@ const MOTIVOS: Record<string, string> = {
   whatsapp_number_pinned_to_profile: "Ese número pertenece a otro negocio de la plataforma.",
   whatsapp_error: "Meta no pudo completar la conexión. Revisa que el número esté activo en la app WhatsApp Business.",
   perfil_ajeno: "La conexión no corresponde a este negocio.",
-  cuenta_no_encontrada: "Zernio no encuentra la cuenta conectada. Prueba otra vez.",
+  cuenta_no_encontrada: "El proveedor no encuentra la cuenta conectada. Prueba otra vez.",
   solo_propietario: "Solo el propietario puede conectar WhatsApp.",
 };
 
-export function WhatsappZernioCard() {
+export function WhatsappZernioCard({ manual = true }: { manual?: boolean }) {
   const [connection, setConnection] = useState<Connection | null>(null);
   const [platform, setPlatform] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -72,7 +72,7 @@ export function WhatsappZernioCard() {
     void refetch();
     // Vuelta de Zernio: `?zernio=conectado` o `?zernio=error&motivo=...`.
     const q = new URLSearchParams(window.location.search);
-    const estado = q.get("zernio");
+    const estado = q.get("conexion");
     if (estado === "conectado") setAviso({ ok: true, text: "¡WhatsApp conectado!" });
     if (estado === "error") {
       const m = q.get("motivo") ?? "";
@@ -135,7 +135,7 @@ export function WhatsappZernioCard() {
             <p className="text-danger-text">
               {connection.platform
                 ? "La conexión con WhatsApp no está disponible ahora mismo: los envíos están pausados. Avisa al soporte."
-                : "La API key de Zernio expiró o fue revocada: los envíos están pausados. Pega una nueva abajo."}
+                : "La API key expiró o fue revocada: los envíos están pausados. Pega una nueva abajo."}
             </p>
           </div>
         )}
@@ -207,17 +207,21 @@ export function WhatsappZernioCard() {
           </ul>
         )}
 
-        {platform && (
+        {manual && platform && (
           <button
             type="button"
             className="text-xs text-text-3 underline underline-offset-2"
             onClick={() => setAvanzado((v) => !v)}
           >
-            {avanzado ? "Ocultar opción avanzada" : "Avanzado: usar mi propia cuenta de Zernio"}
+            {avanzado ? "Ocultar opción avanzada" : "Avanzado: usar mi propia cuenta del proveedor"}
           </button>
         )}
 
-        {(!platform || avanzado) && (
+        {!manual && !platform && connection?.status !== "connected" && (
+          <p className="text-sm text-text-2">La conexión de WhatsApp estará disponible muy pronto.</p>
+        )}
+
+        {manual && (!platform || avanzado) && (
           <>
             <ul className="list-disc space-y-1 pl-5 text-xs text-text-2">
               {PASOS_MANUAL.map((p, i) => (

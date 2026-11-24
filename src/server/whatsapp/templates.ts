@@ -516,7 +516,7 @@ async function sendTemplateByZernio(
   if (!input.phone) {
     throw new TemplateError(
       "meta_error",
-      "Por Zernio la plantilla necesita el teléfono del contacto, y este no lo tiene"
+      "Para enviar la plantilla hace falta el teléfono del contacto, y este no lo tiene"
     );
   }
   try {
@@ -537,10 +537,10 @@ async function sendTemplateByZernio(
     if (err instanceof MetaApiError) {
       if (err.isAuthError) {
         await markWhatsappZernioReconnectRequired(creds.organizationId);
-        throw new TemplateError("reconnect_required", "La llave de Zernio expiró: reconecta WhatsApp");
+        throw new TemplateError("reconnect_required", "La conexión de WhatsApp expiró: reconéctala");
       }
       if (err.status === 0 || err.status >= 500) {
-        throw new TemplateError("meta_unavailable", "Zernio no está disponible ahora");
+        throw new TemplateError("meta_unavailable", "WhatsApp no está disponible ahora");
       }
       throw new TemplateError("meta_error", err.message);
     }

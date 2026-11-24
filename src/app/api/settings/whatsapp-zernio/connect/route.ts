@@ -24,7 +24,7 @@ export const POST = withAuth(async (session, req: Request) => {
     return apiError(403, "forbidden", "Solo el propietario puede conectar WhatsApp");
   }
   if (!(await zernioPlataforma())) {
-    return apiError(409, "sin_plataforma", "La conexión con Zernio todavía no está disponible. Avisa al soporte.");
+    return apiError(409, "sin_plataforma", "La conexión de WhatsApp todavía no está disponible. Avisa al soporte.");
   }
   const body = await parseBody(req, bodySchema);
   if (!body.ok) return body.response;
@@ -43,6 +43,6 @@ export const POST = withAuth(async (session, req: Request) => {
     return Response.json({ authUrl });
   } catch (err) {
     console.error("[zernio-plataforma] no se pudo iniciar la conexión:", err);
-    return apiError(502, "zernio_error", "Zernio no respondió. Prueba otra vez en un momento.");
+    return apiError(502, "zernio_error", "WhatsApp no respondió. Prueba otra vez en un momento.");
   }
 });

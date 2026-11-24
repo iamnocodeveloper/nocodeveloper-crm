@@ -47,10 +47,10 @@ type WebhookInfo = {
 
 const HELP: Record<Source, { title: string; items: string[] }> = {
   zernio: {
-    title: "Vincula tu página en Zernio y pega aquí tu API key",
+    title: "Vincula tu página en el proveedor y pega aquí tu API key",
     items: [
-      "La página se vincula en el panel de Zernio (Accounts → Connect), no desde aquí.",
-      "La API key se crea en Zernio → Settings → API Keys y se muestra una sola vez (empieza con sk_).",
+      "La página se vincula en el panel de tu proveedor (Accounts → Connect), no desde aquí.",
+      "La API key se crea en el proveedor → Settings → API Keys y se muestra una sola vez (empieza con sk_).",
     ],
   },
   meta: {
@@ -160,7 +160,7 @@ export function MessengerClient() {
           <CheckCircle2 className="h-5 w-5 text-success" />
           <div className="flex-1 text-sm">
             <p className="font-medium text-success-text">
-              Conectado por {connection.source === "zernio" ? "Zernio" : "Meta"}
+              Conectado por {connection.source === "zernio" ? "API unificada" : "Meta"}
               {connection.pageName ? `: ${connection.pageName}` : ""}
             </p>
             <p className="text-success-text opacity-80">
@@ -201,7 +201,7 @@ export function MessengerClient() {
                       : "border-border-strong hover:bg-accent"
                   )}
                 >
-                  {s === "zernio" ? "Zernio (API unificada)" : "App propia de Meta"}
+                  {s === "zernio" ? "API unificada" : "App propia de Meta"}
                 </button>
               ))}
             </div>
@@ -262,7 +262,7 @@ export function MessengerClient() {
         <p className="flex items-start gap-2 text-xs text-text-2">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
-            El webhook lo da de alta Nocodeveloper en tu Zernio al conectar, limitado a
+            El webhook lo da de alta Nocodeveloper en tu proveedor al conectar, limitado a
             tus cuentas. Si un día dejan de llegar mensajes, revisa{" "}
             <Link href="/settings/channels" className="font-semibold underline">
               el estado de los canales

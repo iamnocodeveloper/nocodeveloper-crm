@@ -285,7 +285,7 @@ async function prepareSend(
     if (ttCreds.status === "reconnect_required") {
       throw new SendError(
         "reconnect_required",
-        "La llave de Zernio dejó de servir: reconecta TikTok en Configuración"
+        "La conexión de TikTok dejó de funcionar: reconéctala en Configuración"
       );
     }
     if (
@@ -341,7 +341,7 @@ async function prepareSend(
     if (zernioWa.status === "reconnect_required") {
       throw new SendError(
         "reconnect_required",
-        "La llave de Zernio dejó de servir: reconecta WhatsApp en Configuración"
+        "La conexión de WhatsApp dejó de funcionar: reconéctala en Configuración"
       );
     }
     const zRecipient =
@@ -638,7 +638,7 @@ export async function sendMediaMessage(input: {
   if (target.zernioWa) {
     throw new SendError(
       "meta_error",
-      "Todavía no se pueden enviar adjuntos por WhatsApp con Zernio; manda el texto"
+      "Todavía no se pueden enviar adjuntos por esta conexión de WhatsApp; manda el texto"
     );
   }
   const sendCaps = capabilitiesFor(target.conversation.channel);
@@ -1006,7 +1006,7 @@ async function callTiktokSend(target: SendTarget, text: string): Promise<string>
         await markTiktokReconnectRequired(creds.organizationId);
         throw new SendError(
           "reconnect_required",
-          "La llave de Zernio expiró o fue revocada: reconecta TikTok"
+          "La conexión de TikTok expiró: reconéctala"
         );
       }
       if (err.status === 0 || err.status >= 500) {
@@ -1031,7 +1031,7 @@ async function callZernioWaSend(target: SendTarget, text: string): Promise<strin
   if (!target.conversation.channelThreadRef) {
     throw new SendError(
       "window_closed",
-      "Esta conversación todavía no existe en Zernio: escríbele primero con una plantilla"
+      "Esta conversación todavía no está abierta: escríbele primero con una plantilla"
     );
   }
   try {
@@ -1048,13 +1048,13 @@ async function callZernioWaSend(target: SendTarget, text: string): Promise<strin
         await markWhatsappZernioReconnectRequired(creds.organizationId);
         throw new SendError(
           "reconnect_required",
-          "La llave de Zernio expiró o fue revocada: reconecta WhatsApp"
+          "La conexión de WhatsApp expiró: reconéctala"
         );
       }
       if (err.status === 0 || err.status >= 500) {
         throw new SendError(
           "meta_unavailable",
-          "Zernio no está disponible en este momento; intenta de nuevo"
+          "WhatsApp no está disponible en este momento; intenta de nuevo"
         );
       }
       throw new SendError("meta_error", err.message);

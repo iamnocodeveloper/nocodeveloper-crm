@@ -229,7 +229,7 @@ export async function downloadZernioMedia(
     throw new MediaFetchError("La URL del adjunto no es válida", true);
   }
   if (destino.origin !== new URL(ZERNIO_BASE).origin) {
-    throw new MediaFetchError("El adjunto no viene de la API de Zernio", true);
+    throw new MediaFetchError("El adjunto no viene de una fuente válida", true);
   }
   let res: Response;
   try {

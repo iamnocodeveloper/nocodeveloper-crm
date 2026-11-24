@@ -53,7 +53,7 @@ async function sendViaZernio(input: {
   const { credentials, threadRef } = input;
   if (!threadRef) {
     throw new MetaApiError(
-      "La conversacion no tiene referencia de hilo en Zernio",
+      "La conversacion no tiene referencia de hilo en el proveedor",
       { status: 400 }
     );
   }

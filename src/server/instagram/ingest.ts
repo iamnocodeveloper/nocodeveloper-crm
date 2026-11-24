@@ -49,7 +49,7 @@ export async function processZernioEvent(payload: unknown): Promise<void> {
     // payload con su forma no puede ser legitimo aunque llegue por la URL
     // correcta. Sin esto, la unica barrera de la forma ajena es la URL.
     console.warn(
-      `[ig] payload de Zernio en una instancia configurada como '${creds.source}': descartado`
+      `[ig] payload del proveedor en una instancia configurada como '${creds.source}': descartado`
     );
     return;
   }

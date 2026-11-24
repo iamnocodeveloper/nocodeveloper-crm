@@ -34,8 +34,8 @@ type Connection = {
 };
 
 const PASOS = [
-  "La cuenta se vincula en el panel de Zernio (Accounts → Connect), no desde aquí.",
-  "La API key se crea en Zernio → Settings → API Keys y se muestra una sola vez (empieza con sk_).",
+  "La cuenta se vincula en el panel de tu proveedor (Accounts → Connect), no desde aquí.",
+  "La API key se crea en el proveedor → Settings → API Keys y se muestra una sola vez (empieza con sk_).",
 ];
 
 const REGLAS = [
@@ -70,7 +70,7 @@ export function TiktokClient() {
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
           <div>
             <p className="font-medium text-danger-text">
-              La API key de Zernio expiró o fue revocada.
+              La API key expiró o fue revocada.
             </p>
             <p className="text-danger-text opacity-80">
               Los envíos por TikTok están pausados. Pega una nueva abajo para
@@ -85,7 +85,7 @@ export function TiktokClient() {
           <CheckCircle2 className="h-5 w-5 text-success" />
           <div className="flex-1 text-sm">
             <p className="font-medium text-success-text">
-              Conectado por Zernio
+              Conectado por API unificada
               {connection.username ? `: @${connection.username}` : ""}
             </p>
             <p className="text-success-text opacity-80">
@@ -120,8 +120,8 @@ export function TiktokClient() {
           <CardTitle>{connection ? "Reconectar TikTok" : "Conectar TikTok"}</CardTitle>
           <CardDescription>
             Los mensajes directos de tu cuenta entran a la misma bandeja que
-            WhatsApp, con su distintivo de canal. Llegan por Zernio, con tu
-            propia cuenta de Zernio.
+            WhatsApp, con su distintivo de canal. Llegan por el proveedor, con tu
+            propia cuenta del proveedor.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -143,7 +143,7 @@ export function TiktokClient() {
       <p className="flex items-start gap-2 text-xs text-text-2">
         <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
         <span>
-          El webhook lo da de alta Nocodeveloper en tu Zernio al conectar, limitado a
+          El webhook lo da de alta Nocodeveloper en tu proveedor al conectar, limitado a
           tus cuentas. Si un día dejan de llegar mensajes, revisa{" "}
           <Link href="/settings/channels" className="font-semibold underline">
             el estado de los canales

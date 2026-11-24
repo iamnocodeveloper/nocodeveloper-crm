@@ -88,7 +88,7 @@ export function ZernioConnect({
   return (
     <div className="space-y-4">
       <div className="space-y-1.5 sm:max-w-md">
-        <Label htmlFor={`${idPrefix}-token`}>API key de Zernio</Label>
+        <Label htmlFor={`${idPrefix}-token`}>API key</Label>
         <Input
           id={`${idPrefix}-token`}
           type="password"
@@ -98,14 +98,14 @@ export function ZernioConnect({
           autoComplete="off"
         />
         <p className="text-xs text-text-2">
-          Con esa llave Nocodeveloper encuentra {what} en Zernio: no hace falta copiar
+          Con esa llave Nocodeveloper encuentra {what} en el proveedor: no hace falta copiar
           ningún id.
         </p>
       </div>
 
       {manual && (
         <div className="space-y-1.5 sm:max-w-md">
-          <Label htmlFor={`${idPrefix}-account`}>accountId de la cuenta en Zernio</Label>
+          <Label htmlFor={`${idPrefix}-account`}>accountId de la cuenta en el proveedor</Label>
           <Input
             id={`${idPrefix}-account`}
             value={accountRef}
@@ -169,14 +169,14 @@ export function ZernioConnect({
           {saved.webhook?.ok && (
             <p className="text-success-text opacity-80">
               {saved.webhook.created
-                ? "Nocodeveloper dio de alta su webhook en tu Zernio, limitado a tus cuentas conectadas."
-                : "El webhook de tu Zernio quedó actualizado y limitado a tus cuentas conectadas."}
+                ? "Nocodeveloper dio de alta su webhook en tu proveedor, limitado a tus cuentas conectadas."
+                : "El webhook de tu proveedor quedó actualizado y limitado a tus cuentas conectadas."}
             </p>
           )}
           {saved.health && saved.health.level !== "ok" && <Aviso>{saved.health.message}</Aviso>}
           {saved.webhook && !saved.webhook.ok && (
             <Aviso>
-              {saved.webhook.message ?? "No se pudo dar de alta el webhook en Zernio."}{" "}
+              {saved.webhook.message ?? "No se pudo dar de alta el webhook en el proveedor."}{" "}
               <Link href="/settings/channels" className="font-semibold underline">
                 Ver el estado de los canales
               </Link>

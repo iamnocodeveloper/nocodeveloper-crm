@@ -50,7 +50,7 @@ export type ChannelStatus = {
 
 const SIN_ZERNIO: Health = {
   level: "warn",
-  message: "No se pudo consultar a Zernio ahora mismo. Vuelve a intentarlo en un momento.",
+  message: "No se pudo consultar al proveedor ahora mismo. Vuelve a intentarlo en un momento.",
 };
 
 /** Cuándo entró el último mensaje de un cliente por cada canal (sin el Laboratorio). */

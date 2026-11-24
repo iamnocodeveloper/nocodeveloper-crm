@@ -139,8 +139,8 @@ export function ChannelsClient() {
     setNotice({
       ok: true,
       text: data?.created
-        ? `Webhook dado de alta en Zernio, limitado a ${cuentas}.`
-        : `Webhook actualizado en Zernio y limitado a ${cuentas}.`,
+        ? `Webhook dado de alta en el proveedor, limitado a ${cuentas}.`
+        : `Webhook actualizado en el proveedor y limitado a ${cuentas}.`,
     });
     void refetch();
   }
@@ -165,7 +165,7 @@ export function ChannelsClient() {
             <CardDescription>
               Los canales encendidos en esta instancia: si están conectados,
               cuándo entró el último mensaje de un cliente y, si llegan por
-              Zernio, cómo están la cuenta y el webhook.
+              el proveedor, cómo están la cuenta y el webhook.
             </CardDescription>
           </div>
           <Button
@@ -202,7 +202,7 @@ export function ChannelsClient() {
                     {r.channel !== "whatsapp" && (
                       <span className="text-text-2">
                         {" "}
-                        · {r.source === "zernio" ? "por Zernio" : "app propia de Meta"}
+                        · {r.source === "zernio" ? "por el proveedor" : "app propia de Meta"}
                       </span>
                     )}
                   </dd>
@@ -221,11 +221,11 @@ export function ChannelsClient() {
 
                   {r.health && (
                     <>
-                      <dt className="text-text-2">Cuenta en Zernio</dt>
+                      <dt className="text-text-2">Cuenta en el proveedor</dt>
                       <dd>
                         <Salud health={r.health.account} />
                       </dd>
-                      <dt className="text-text-2">Webhook de Zernio</dt>
+                      <dt className="text-text-2">Webhook del proveedor</dt>
                       <dd>
                         <Salud health={r.health.webhook} />
                         {r.health.webhook.lastFiredAt && (
@@ -247,9 +247,9 @@ export function ChannelsClient() {
       {porZernio.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Webhook de Zernio</CardTitle>
+            <CardTitle>Webhook del proveedor</CardTitle>
             <CardDescription>
-              Es el aviso con el que Zernio le entrega cada mensaje a esta
+              Es el aviso con el que el proveedor le entrega cada mensaje a esta
               instancia. Nocodeveloper lo da de alta al conectar un canal, con el evento{" "}
               <code>message.received</code> y limitado a tus cuentas conectadas.
               Si se desactivó o quedó sin una cuenta, aquí se repara.
@@ -263,9 +263,9 @@ export function ChannelsClient() {
                 onClick={() => void repair()}
               >
                 {repairing
-                  ? "Hablando con Zernio…"
+                  ? "Hablando con el proveedor…"
                   : webhookMal
-                    ? "Reparar el webhook en Zernio"
+                    ? "Reparar el webhook en el proveedor"
                     : "Volver a dar de alta el webhook"}
               </Button>
             ) : (
@@ -284,13 +284,13 @@ export function ChannelsClient() {
             {webhookUrl && (
               <details className="text-sm">
                 <summary className="cursor-pointer text-xs font-semibold text-text-2">
-                  Crearlo a mano en Zernio
+                  Crearlo a mano en el proveedor
                 </summary>
                 <div className="mt-3 space-y-2">
                   <p className="text-xs text-text-2">
-                    En Zernio → Webhooks, da de alta esta URL con el evento{" "}
+                    En tu proveedor → Webhooks, da de alta esta URL con el evento{" "}
                     <code>message.received</code> y limítalo a tus cuentas. El
-                    secreto de firma lo lee Nocodeveloper de Zernio: no hay que
+                    secreto de firma lo lee Nocodeveloper del proveedor: no hay que
                     copiarlo aquí.
                   </p>
                   <div className="flex gap-2">

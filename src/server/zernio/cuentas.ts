@@ -109,7 +109,7 @@ export function pickZernioAccount(
       ok: false,
       code: "unknown_account",
       message:
-        "Esa llave de Zernio no tiene ninguna cuenta conectada de este canal. Vincúlala en Zernio y vuelve a intentar.",
+        "Esa API key no tiene ninguna cuenta conectada de este canal. Vincúlala en el proveedor y vuelve a intentar.",
       candidates,
     };
   }
@@ -143,7 +143,7 @@ export function pickZernioAccount(
   return {
     ok: false,
     code: "unknown_account",
-    message: `Ese id no es de ninguna cuenta de este canal en Zernio. Sirven: ${cuales}`,
+    message: `Ese id no es de ninguna cuenta de este canal en el proveedor. Sirven: ${cuales}`,
     candidates,
   };
 }
@@ -162,14 +162,14 @@ export function accountHealth(
   if (!account) {
     return {
       level: "error",
-      message: "La cuenta ya no aparece en Zernio con esa llave. Vuelve a conectarla.",
+      message: "La cuenta ya no aparece en el proveedor con esa llave. Vuelve a conectarla.",
     };
   }
   if (account.needsReconnection) {
-    return { level: "error", message: "Zernio pide reconectar la cuenta." };
+    return { level: "error", message: "El proveedor pide reconectar la cuenta." };
   }
   if (account.isActive === false || account.enabled === false) {
-    return { level: "error", message: "La cuenta está desactivada en Zernio." };
+    return { level: "error", message: "La cuenta está desactivada en el proveedor." };
   }
   if (account.messagingRestriction) {
     return {
@@ -200,7 +200,7 @@ export function accountHealth(
   if (Number.isFinite(vence) && vence < now.getTime()) {
     return {
       level: "warn",
-      message: "El acceso de Zernio a la cuenta venció. Si deja de recibir, reconéctala en Zernio.",
+      message: "El acceso del proveedor a la cuenta venció. Si deja de recibir, reconéctala en el proveedor.",
     };
   }
   return { level: "ok", message: "Activa" };

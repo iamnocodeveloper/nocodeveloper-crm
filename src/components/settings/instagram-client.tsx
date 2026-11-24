@@ -46,10 +46,10 @@ type WebhookInfo = {
 
 const HELP: Record<Source, { title: string; items: string[] }> = {
   zernio: {
-    title: "Vincula tu Instagram en Zernio y pega aquí tu API key",
+    title: "Vincula tu Instagram en el proveedor y pega aquí tu API key",
     items: [
-      "La cuenta se vincula en el panel de Zernio (Accounts → Connect), no desde aquí. Tiene que ser una cuenta profesional: de empresa o de creador.",
-      "La API key se crea en Zernio → Settings → API Keys y se muestra una sola vez (empieza con sk_).",
+      "La cuenta se vincula en el panel de tu proveedor (Accounts → Connect), no desde aquí. Tiene que ser una cuenta profesional: de empresa o de creador.",
+      "La API key se crea en el proveedor → Settings → API Keys y se muestra una sola vez (empieza con sk_).",
     ],
   },
   meta: {
@@ -144,7 +144,7 @@ export function InstagramClient() {
           <div>
             <p className="font-medium text-danger-text">
               {connection.source === "zernio"
-                ? "La API key de Zernio expiró o fue revocada."
+                ? "La API key expiró o fue revocada."
                 : "El token expiró o fue revocado."}
             </p>
             <p className="text-danger-text opacity-80">
@@ -159,7 +159,7 @@ export function InstagramClient() {
           <CheckCircle2 className="h-5 w-5 text-success" />
           <div className="flex-1 text-sm">
             <p className="font-medium text-success-text">
-              Conectado por {connection.source === "zernio" ? "Zernio" : "Meta"}
+              Conectado por {connection.source === "zernio" ? "API unificada" : "Meta"}
               {connection.username ? `: @${connection.username}` : ""}
             </p>
             <p className="text-success-text opacity-80">
@@ -201,7 +201,7 @@ export function InstagramClient() {
                       : "border-border-strong hover:bg-accent"
                   )}
                 >
-                  {s === "zernio" ? "Zernio (API unificada)" : "App propia de Meta"}
+                  {s === "zernio" ? "API unificada" : "App propia de Meta"}
                 </button>
               ))}
             </div>
@@ -269,7 +269,7 @@ export function InstagramClient() {
         <p className="flex items-start gap-2 text-xs text-text-2">
           <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
           <span>
-            El webhook lo da de alta Nocodeveloper en tu Zernio al conectar, limitado a
+            El webhook lo da de alta Nocodeveloper en tu proveedor al conectar, limitado a
             tus cuentas. Si un día dejan de llegar mensajes, revisa{" "}
             <Link href="/settings/channels" className="font-semibold underline">
               el estado de los canales
