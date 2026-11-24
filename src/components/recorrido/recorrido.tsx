@@ -41,16 +41,29 @@ const escribir = (k: string, v: string | null) => {
   }
 };
 
-/** El elemento visible con ese `data-tour` (el riel en escritorio, la tira en el teléfono). */
+/**
+ * El elemento con ese `data-tour` que se está dibujando (el riel en
+ * escritorio, la tira de Ajustes en el teléfono). Puede estar fuera de la
+ * pantalla dentro de una tira que se desplaza: quien llama lo trae a la vista.
+ */
 function buscar(objetivo: string): HTMLElement | null {
   const todos = Array.from(document.querySelectorAll<HTMLElement>(`[data-tour="${CSS.escape(objetivo)}"]`));
-  return (
-    todos.find((el) => {
-      const r = el.getBoundingClientRect();
-      const s = window.getComputedStyle(el);
-      return r.width > 0 && r.height > 0 && s.visibility !== "hidden" && r.right > 0 && r.left < window.innerWidth;
-    }) ?? null
-  );
+  const dibujados = todos.filter((el) => {
+    const r = el.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && window.getComputedStyle(el).visibility !== "hidden";
+  });
+  const enPantalla = (el: HTMLElement) => {
+    const r = el.getBoundingClientRect();
+    return r.right > 0 && r.left < window.innerWidth && r.bottom > 0 && r.top < window.innerHeight;
+  };
+  return dibujados.find(enPantalla) ?? dibujados[0] ?? null;
+}
+
+function medirEl(el: HTMLElement): Rect | null {
+  const r = el.getBoundingClientRect();
+  // Fuera de la pantalla no hay nada que resaltar: tarjeta centrada.
+  if (r.right <= 0 || r.left >= window.innerWidth || r.bottom <= 0 || r.top >= window.innerHeight) return null;
+  return { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height };
 }
 
 export function Recorrido({
@@ -135,8 +148,7 @@ export function Recorrido({
       const el = buscar(actual.objetivo!);
       if (el) {
         el.scrollIntoView({ block: "nearest", inline: "center" });
-        const r = el.getBoundingClientRect();
-        setRect({ top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height });
+        setRect(medirEl(el));
       } else if (intentos++ < 20) {
         setTimeout(medir, 100);
       } else {
@@ -156,15 +168,16 @@ export function Recorrido({
       setVista((v) => (v.w === window.innerWidth && v.h === window.innerHeight ? v : { w: window.innerWidth, h: window.innerHeight }));
       if (actual.objetivo) {
         const el = buscar(actual.objetivo);
-        if (el) {
-          const r = el.getBoundingClientRect();
-          // Solo si se movió: evita repintar por nada.
-          setRect((p) =>
-            p && p.top === r.top && p.left === r.left && p.width === r.width && p.height === r.height
+        const r = el ? medirEl(el) : null;
+        // Solo si cambió: evita repintar por nada. Sin elemento, sin anillo
+        // (nunca uno viejo en el sitio de otro paso).
+        setRect((p) =>
+          r === null
+            ? null
+            : p && p.top === r.top && p.left === r.left && p.width === r.width && p.height === r.height
               ? p
-              : { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height }
-          );
-        }
+              : r
+        );
       }
     };
     alCambiar();
