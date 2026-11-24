@@ -11,6 +11,7 @@ import { BrandLogo } from "@/components/brand-mark";
 import { cn } from "@/lib/utils";
 import { BandaSinConexion } from "@/components/banda-sin-conexion";
 import { AtajosGlobales } from "@/components/atajos-globales";
+import { Recorrido } from "@/components/recorrido/recorrido";
 
 /**
  * Cascarón de la app en dos modos:
@@ -32,10 +33,13 @@ export function AppShell({
   commit,
   agenda = false,
   superadmin = false,
+  woocommerce = false,
   kicker,
   aviso = null,
   children,
 }: {
+  /** K7 — ¿el recorrido enseña WooCommerce? (API v1 encendida). */
+  woocommerce?: boolean;
   /** K4 — ¿quien mira administra la plataforma? */
   superadmin?: boolean;
   branding: Branding;
@@ -122,6 +126,8 @@ export function AppShell({
         <BandaSinConexion />
         {/* 055 — Ctrl+K y «?» desde cualquier pantalla. */}
         <AtajosGlobales agenda={agenda} role={role} />
+        {/* K7 — Recorrido guiado: solo la primera vez, o desde la brújula. */}
+        <Recorrido marca={branding.name} role={role} agenda={agenda} woocommerce={woocommerce} />
 
         {/* La Bandeja trae sus propias tarjetas (lista, hilo, panel); el resto
             de las pantallas vive en una sola. */}

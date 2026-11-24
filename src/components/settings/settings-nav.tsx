@@ -49,6 +49,7 @@ export function SettingsNav({
               <Link
                 key={t.href}
                 href={t.href}
+                data-tour={t.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
                   "block shrink-0 whitespace-nowrap rounded-sm px-3 py-2 text-[13.5px] font-semibold transition-colors",

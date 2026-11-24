@@ -14,6 +14,7 @@ import { avisoIaDe } from "@/server/ai/aviso";
 import { AvisoIaBanner } from "@/components/avisos/aviso-ia";
 import { AvisoCuentaBanner } from "@/components/avisos/aviso-cuenta";
 import { isSuperadminEmail, saasModeEnabled } from "@/server/saas/mode";
+import { apiV1Enabled } from "@/server/api-v1/flag";
 import { avisoCuentaDe, getTenant } from "@/server/saas/tenant";
 
 export default async function AppLayout({
@@ -49,6 +50,7 @@ export default async function AppLayout({
       // cliente: no puede —ni debe— leer variables de entorno.
       agenda={agendaEnabled()}
       superadmin={isSuperadminEmail(authSession?.user.email)}
+      woocommerce={apiV1Enabled()}
       kicker={navKicker([...enabledChannels()])}
       aviso={
         <>

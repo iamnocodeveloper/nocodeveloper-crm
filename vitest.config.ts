@@ -10,6 +10,10 @@ export default defineConfig({
   test: {
     include: ["tests/unit/**/*.test.ts"],
     environment: "node",
+    // Varias pruebas importan una ruta entera dentro del test: esa primera
+    // carga, con toda la suite en paralelo en una máquina cargada, pasa de los
+    // 5 s por defecto sin que haya nada roto.
+    testTimeout: 20_000,
   },
   resolve: {
     alias: {

@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { AlertTriangle, Bell, BellOff, LogOut, X } from "lucide-react";
+import { AlertTriangle, Bell, BellOff, Compass, LogOut, X } from "lucide-react";
+import { abrirRecorrido } from "@/components/recorrido/recorrido";
 import { BrandTile } from "@/components/brand-mark";
 import { BotonInstalar } from "@/components/pwa";
 import { BotonActivarAvisos } from "@/components/activar-avisos";
@@ -202,6 +203,7 @@ export function AppNav({
       <Link
         key={item.href}
         href={item.href}
+        data-tour={item.href}
         className={navItemClass(active)}
         aria-current={active ? "page" : undefined}
       >
@@ -332,6 +334,18 @@ export function AppNav({
       <BotonActivarAvisos className={navItemClass(false)} />
       <BotonInstalar className={navItemClass(false)} />
 
+      <button
+        type="button"
+        onClick={() => {
+          onClose?.();
+          abrirRecorrido();
+        }}
+        className={cn(navItemClass(false), "w-full")}
+      >
+        <Compass className="h-5 w-5 shrink-0 text-text-3" strokeWidth={1.8} aria-hidden />
+        <span className="flex-1 text-left">Ver recorrido</span>
+      </button>
+
       {/* Ajustes va abajo, solo: no es trabajo del día. */}
       {renderItem(SETTINGS_ITEM)}
 
@@ -437,6 +451,7 @@ function Riel({
       <Link
         key={item.href}
         href={item.href}
+        data-tour={item.href}
         aria-label={item.label}
         title={item.label}
         aria-current={active ? "page" : undefined}
@@ -475,6 +490,16 @@ function Riel({
         ))}
       </div>
       <div className="mt-3 flex flex-col items-center gap-2.5">
+        <button
+          type="button"
+          onClick={abrirRecorrido}
+          aria-label="Ver recorrido"
+          title="Ver recorrido por el panel"
+          data-tour="recorrido"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-border-strong text-text-2 transition-colors hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <Compass className="h-[19px] w-[19px]" strokeWidth={1.8} aria-hidden />
+        </button>
         <span className="flex h-11 w-11 items-center justify-center">{campana}</span>
         {boton(SETTINGS_ITEM)}
         <div ref={cuentaRef} className="relative">
