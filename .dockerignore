@@ -20,3 +20,5 @@ README.md
 # los *_snapshot.json de meta/ son de `drizzle-kit generate` y pesan ~1.2 MB.
 drizzle/meta/*
 !drizzle/meta/_journal.json
+# K6: el código del plugin no corre en el CRM (su .zip va en public/).
+integraciones

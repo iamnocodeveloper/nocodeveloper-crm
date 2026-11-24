@@ -1753,3 +1753,75 @@ export const saasIntegration = pgTable("saas_integration", {
   updatedBy: text("updated_by"),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
+
+/* ============================================================
+ * K6 — Tiendas (WooCommerce): pedidos y avisos por WhatsApp
+ * ============================================================ */
+
+/** Regla de aviso de un estado de pedido. */
+export type StoreNotifyRule = {
+  enabled: boolean;
+  /** Plantilla aprobada (id local). Con ella se avisa aunque no haya ventana de 24 h. */
+  templateId: string | null;
+  /** Un token por variable de la plantilla ({{1}}, {{2}}…), p. ej. "{nombre}". */
+  variables: string[];
+  /** Texto libre: solo se manda con la ventana de 24 h abierta (o si no hay plantilla). */
+  text: string | null;
+};
+
+/** K6 — Ajustes de la tienda de un negocio. */
+export const storeSettings = pgTable("store_settings", {
+  organizationId: text("organization_id")
+    .primaryKey()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  enabled: boolean("enabled").notNull().default(true),
+  /** Solo avisar a quien marcó la casilla de WhatsApp en el checkout. */
+  requireOptIn: boolean("require_opt_in").notNull().default(false),
+  /** Crear la oportunidad en el pipeline con el importe del pedido. */
+  createLeads: boolean("create_leads").notNull().default(true),
+  rules: jsonb("rules").$type<Record<string, StoreNotifyRule>>().notNull().default({}),
+  storeUrl: text("store_url"),
+  storeName: text("store_name"),
+  lastEventAt: timestamp("last_event_at"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/** K6 — Un pedido de la tienda, tal como lo mandó el plugin. */
+export const storeOrder = pgTable(
+  "store_order",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    source: text("source").notNull().default("woocommerce"),
+    storeUrl: text("store_url").notNull(),
+    externalId: text("external_id").notNull(),
+    number: text("number"),
+    status: text("status").notNull(),
+    totalCents: integer("total_cents"),
+    currency: text("currency"),
+    customerName: text("customer_name"),
+    phone: text("phone"),
+    email: text("email"),
+    items: jsonb("items").$type<{ name: string; quantity: number; totalCents: number | null }[]>(),
+    paymentUrl: text("payment_url"),
+    trackingNumber: text("tracking_number"),
+    trackingUrl: text("tracking_url"),
+    optIn: boolean("opt_in"),
+    contactId: text("contact_id").references(() => contact.id, { onDelete: "set null" }),
+    /** Avisos enviados (o intentados) por estado. */
+    notifications: jsonb("notifications")
+      .$type<{ status: string; at: string; ok: boolean; message: string }[]>()
+      .notNull()
+      .default([]),
+    orderCreatedAt: timestamp("order_created_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("store_order_org_store_ext_uq").on(t.organizationId, t.storeUrl, t.externalId),
+    index("store_order_org_updated_idx").on(t.organizationId, t.updatedAt),
+    index("store_order_contact_idx").on(t.contactId),
+  ]
+);

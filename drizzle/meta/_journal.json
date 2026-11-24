@@ -239,6 +239,13 @@
       "when": 1795536536954,
       "tag": "0033_kooni_saas",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1795543474993,
+      "tag": "0034_tienda_woocommerce",
+      "breakpoints": true
     }
   ]
 }

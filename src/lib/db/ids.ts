@@ -53,6 +53,8 @@ const prefixes = {
   // K1 — Kooni SaaS
   saasPlan: "plan",
   saasAudit: "aud",
+  // K6 — tiendas
+  storeOrder: "ord",
 } as const;
 
 export type IdKind = keyof typeof prefixes;

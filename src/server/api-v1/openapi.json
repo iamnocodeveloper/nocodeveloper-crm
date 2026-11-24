@@ -1508,6 +1508,168 @@
           }
         }
       }
+    },
+    "/woocommerce/ping": {
+      "get": {
+        "summary": "Probar la conexión de la tienda",
+        "description": "Permiso: read. Lo usa el plugin de WooCommerce en «Probar conexión».",
+        "responses": {
+          "200": {
+            "description": "`{ ok: true, business, notifications }`"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
+    },
+    "/woocommerce/orders": {
+      "post": {
+        "summary": "Recibir un pedido de WooCommerce",
+        "description": "Permiso: send. El plugin manda cada pedido nuevo (`event: created`), cada cambio de estado (`status_changed`) y la importación (`sync`, sin avisos). Crea o actualiza el contacto por su teléfono, lo pone en el pipeline y, si hay regla para ese estado, avisa por WhatsApp. Idempotente por tienda + id del pedido.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "event",
+                  "store",
+                  "order"
+                ],
+                "properties": {
+                  "event": {
+                    "type": "string",
+                    "enum": [
+                      "created",
+                      "status_changed",
+                      "sync",
+                      "test"
+                    ]
+                  },
+                  "store": {
+                    "type": "object",
+                    "required": [
+                      "url"
+                    ],
+                    "properties": {
+                      "url": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "order": {
+                    "type": "object",
+                    "required": [
+                      "id",
+                      "status"
+                    ],
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "number": {
+                        "type": "string"
+                      },
+                      "status": {
+                        "type": "string",
+                        "description": "Estado de WooCommerce (pending, processing, completed…)"
+                      },
+                      "previous_status": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "total": {
+                        "type": "string"
+                      },
+                      "currency": {
+                        "type": "string"
+                      },
+                      "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                      },
+                      "customer": {
+                        "type": "object",
+                        "properties": {
+                          "first_name": {
+                            "type": "string"
+                          },
+                          "last_name": {
+                            "type": "string"
+                          },
+                          "phone": {
+                            "type": "string",
+                            "description": "Solo dígitos con prefijo de país"
+                          },
+                          "email": {
+                            "type": "string"
+                          },
+                          "country": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "items": {
+                        "type": "array",
+                        "items": {
+                          "type": "object",
+                          "properties": {
+                            "name": {
+                              "type": "string"
+                            },
+                            "quantity": {
+                              "type": "integer"
+                            },
+                            "total": {
+                              "type": "string"
+                            }
+                          }
+                        }
+                      },
+                      "payment_url": {
+                        "type": "string",
+                        "nullable": true
+                      },
+                      "tracking": {
+                        "type": "object",
+                        "nullable": true,
+                        "properties": {
+                          "number": {
+                            "type": "string"
+                          },
+                          "url": {
+                            "type": "string"
+                          }
+                        }
+                      },
+                      "whatsapp_optin": {
+                        "type": "boolean",
+                        "nullable": true
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "`{ ok: true, orderId, contactId, notified: { ok, message } | null }`"
+          },
+          "401": {
+            "$ref": "#/components/responses/Error"
+          },
+          "422": {
+            "$ref": "#/components/responses/Error"
+          }
+        }
+      }
     }
   }
 }

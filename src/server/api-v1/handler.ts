@@ -4,6 +4,8 @@ import type { SessionContext } from "@/lib/auth/session";
 import { getDb, schema } from "@/lib/db";
 import { checkRateLimit, clientIp } from "@/lib/rate-limit";
 import { resolveInstanceOrg } from "@/server/bot/auth";
+import { saasModeEnabled } from "@/server/saas/mode";
+import { tenantGate } from "@/server/saas/tenant";
 import { accesoPorValor, registrarUsoGrant } from "@/server/oauth/servidor";
 import { rolPuede, rolVigente, type Capacidad } from "./acceso";
 import { apiV1DisabledResponse, apiV1Enabled } from "./flag";
@@ -120,9 +122,17 @@ export async function autenticarLlave(
     return apiError(401, "invalid_key", "Llave o token inválido, caducado o revocado");
   }
 
-  const instancia = await resolveInstanceOrg();
-  if (!instancia || llave.organizationId !== instancia) {
-    return apiError(401, "invalid_key", "Llave o token inválido, caducado o revocado");
+  // K6 — En el SaaS cada negocio tiene sus llaves: la organización sale de la
+  // llave y no hay «organización de la instancia» con la que compararla.
+  if (!saasModeEnabled()) {
+    const instancia = await resolveInstanceOrg();
+    if (!instancia || llave.organizationId !== instancia) {
+      return apiError(401, "invalid_key", "Llave o token inválido, caducado o revocado");
+    }
+  } else if (req.method !== "GET" && req.method !== "HEAD") {
+    // Negocio suspendido o con la prueba vencida: su llave solo lee.
+    const gate = await tenantGate(llave.organizationId);
+    if (gate.blocked) return apiError(402, gate.code, gate.message);
   }
 
   // Actúa como quien la creó, recortado a los scopes de la llave. Fuera del

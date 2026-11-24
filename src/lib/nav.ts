@@ -155,6 +155,8 @@ export function settingsSections({
   if (atribucion) negocio.push({ href: "/settings/ads", label: "Anuncios" });
   // 069 — llaves de la API, el MCP y las apps conectadas (claude.ai, ChatGPT…).
   if (api) negocio.push({ href: "/settings/api", label: "API y MCP" });
+  // K6 — la tienda manda sus pedidos por la API v1: existe con ella.
+  if (api) negocio.push({ href: "/settings/woocommerce", label: "WooCommerce" });
 
   return [
     { title: "Canales", links: canales },
