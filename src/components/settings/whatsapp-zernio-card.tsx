@@ -118,7 +118,7 @@ export function WhatsappZernioCard({ manual = true }: { manual?: boolean }) {
         <CardDescription>
           Conecta tu número a la API oficial de WhatsApp. Con <strong>coexistencia</strong> sigues
           usando la app de WhatsApp Business en tu teléfono, y lo que escribas desde ahí también
-          aparece en la bandeja. Conectar aquí reemplaza la conexión de Meta de arriba.
+          aparece en la bandeja.{manual ? " Conectar aquí reemplaza la conexión de Meta de arriba." : ""}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname, useRouter } from "next/navigation";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -152,21 +153,30 @@ export function Recorrido({
   useEffect(() => {
     if (!actual) return;
     const alCambiar = () => {
-      setVista({ w: window.innerWidth, h: window.innerHeight });
+      setVista((v) => (v.w === window.innerWidth && v.h === window.innerHeight ? v : { w: window.innerWidth, h: window.innerHeight }));
       if (actual.objetivo) {
         const el = buscar(actual.objetivo);
         if (el) {
           const r = el.getBoundingClientRect();
-          setRect({ top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height });
+          // Solo si se movió: evita repintar por nada.
+          setRect((p) =>
+            p && p.top === r.top && p.left === r.left && p.width === r.width && p.height === r.height
+              ? p
+              : { top: r.top, left: r.left, right: r.right, bottom: r.bottom, width: r.width, height: r.height }
+          );
         }
       }
     };
     alCambiar();
     window.addEventListener("resize", alCambiar);
     window.addEventListener("scroll", alCambiar, true);
+    // La página de debajo termina de cargar y cambia de tamaño sin ningún
+    // evento de scroll: se vuelve a medir un rato.
+    const reloj = setInterval(alCambiar, 250);
     return () => {
       window.removeEventListener("resize", alCambiar);
       window.removeEventListener("scroll", alCambiar, true);
+      clearInterval(reloj);
     };
   }, [actual]);
 
@@ -193,21 +203,33 @@ export function Recorrido({
   const ultimo = paso === pasos.length - 1;
   const pad = 6;
 
-  return (
+  // El hueco alrededor de lo resaltado, recortado a la ventana.
+  const hueco = rect
+    ? {
+        top: Math.max(0, rect.top - pad),
+        left: Math.max(0, rect.left - pad),
+        right: Math.min(vista.w, rect.right + pad),
+        bottom: Math.min(vista.h, rect.bottom + pad),
+      }
+    : null;
+  const velo = "fixed bg-[rgba(10,12,16,0.62)] transition-all duration-200";
+
+  return createPortal(
     <div className="fixed inset-0 z-[200]" role="dialog" aria-modal="true" aria-labelledby="recorrido-titulo">
-      {/* Velo: con un hueco alrededor de lo resaltado (sombra gigante). */}
-      {rect ? (
-        <div
-          aria-hidden
-          className="pointer-events-none fixed rounded-xl ring-2 ring-brand transition-all duration-200"
-          style={{
-            top: rect.top - pad,
-            left: rect.left - pad,
-            width: rect.width + pad * 2,
-            height: rect.height + pad * 2,
-            boxShadow: "0 0 0 9999px rgba(10, 12, 16, 0.62)",
-          }}
-        />
+      {/* Velo en cuatro paneles alrededor del hueco (una sombra gigante no
+          se pinta en todos los navegadores). Sin hueco, la pantalla entera. */}
+      {hueco ? (
+        <>
+          <div aria-hidden className={velo} style={{ top: 0, left: 0, right: 0, height: hueco.top }} />
+          <div aria-hidden className={velo} style={{ top: hueco.bottom, left: 0, right: 0, bottom: 0 }} />
+          <div aria-hidden className={velo} style={{ top: hueco.top, left: 0, width: hueco.left, height: hueco.bottom - hueco.top }} />
+          <div aria-hidden className={velo} style={{ top: hueco.top, left: hueco.right, right: 0, height: hueco.bottom - hueco.top }} />
+          <div
+            aria-hidden
+            className="pointer-events-none fixed rounded-xl ring-2 ring-brand ring-offset-2 ring-offset-transparent transition-all duration-200"
+            style={{ top: hueco.top, left: hueco.left, width: hueco.right - hueco.left, height: hueco.bottom - hueco.top }}
+          />
+        </>
       ) : (
         <div aria-hidden className="fixed inset-0 bg-[rgba(10,12,16,0.62)]" />
       )}
@@ -268,7 +290,9 @@ export function Recorrido({
           </Button>
         </div>
       </div>
-    </div>
+    </div>,
+    // En el body: fuera del marco de la app (que recorta con overflow).
+    document.body
   );
 }
 

@@ -182,11 +182,18 @@ describe("paso 3: WhatsApp", () => {
     expect(await paso("whatsapp")).toMatchObject({ status: "ready", problem: null });
   });
 
+  it("conectado por Zernio → listo", async () => {
+    rows.set(schema.whatsappZernioCredentials, [{ status: "connected" }]);
+    const step = await paso("whatsapp");
+    expect(step?.status).toBe("ready");
+  });
+
   it("token vencido → pendiente, y se dice que hay que reconectar", async () => {
     rows.set(schema.metaCredentials, [{ status: "reconnect_required" }]);
     const step = await paso("whatsapp");
     expect(step?.status).toBe("pending");
-    expect(step?.problem).toMatch(/token/);
+    // K7: el aviso habla en lenguaje del cliente (sin «token»), pero pide reconectar.
+    expect(step?.problem).toMatch(/vuelve a conectar/);
   });
 });
 

@@ -69,11 +69,21 @@ export async function onboardingStatus(
     .from(schema.kbEntry)
     .where(scoped(schema.kbEntry.organizationId, organizationId))
     .limit(1);
-  const [channel] = await db
+  const [meta] = await db
     .select({ status: schema.metaCredentials.status })
     .from(schema.metaCredentials)
     .where(scoped(schema.metaCredentials.organizationId, organizationId))
     .limit(1);
+  // K7 — El número también puede ir por Zernio (la plataforma o llave propia):
+  // un negocio tiene un solo transporte, así que vale el que haya.
+  const [zernio] = meta
+    ? []
+    : await db
+        .select({ status: schema.whatsappZernioCredentials.status })
+        .from(schema.whatsappZernioCredentials)
+        .where(scoped(schema.whatsappZernioCredentials.organizationId, organizationId))
+        .limit(1);
+  const channel = meta ?? zernio;
   const ia = await estadoIaDe(organizationId);
 
   const steps: ReadinessStep[] = [
@@ -108,7 +118,7 @@ export async function onboardingStatus(
       href: "/settings/whatsapp",
       problem:
         channel?.status === "reconnect_required"
-          ? "Meta dejó de aceptar el token de WhatsApp: vuelve a conectar el número."
+          ? "La conexión de WhatsApp dejó de funcionar: vuelve a conectar el número."
           : null,
     },
     await pasoCerebro(),
