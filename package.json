@@ -1,25 +1,8 @@
 {
   "name": "nocodeveloper-crm",
-  "version": "1.0.0",
-  "description": "CRM de WhatsApp open source, self-hosted y móvil, con agente de IA y Laboratorio de auto-evaluación",
+  "version": "2.0.0",
+  "description": "CRM de WhatsApp open source y self-hosted con agente de IA y Laboratorio de auto-evaluación",
   "license": "MIT",
-  "author": "Nocodeveloper",
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/iamnocodeveloper/nocodeveloper-crm.git"
-  },
-  "homepage": "https://github.com/iamnocodeveloper/nocodeveloper-crm",
-  "bugs": {
-    "url": "https://github.com/iamnocodeveloper/nocodeveloper-crm/issues"
-  },
-  "keywords": [
-    "crm",
-    "whatsapp",
-    "ai",
-    "self-hosted",
-    "nextjs",
-    "pwa"
-  ],
   "type": "module",
   "private": true,
   "packageManager": "pnpm@11.5.0",
@@ -36,6 +19,15 @@
     "test:e2e": "node --env-file=.env scripts/e2e-selftest.mjs",
     "test:e2e:calendario": "node --env-file=.env scripts/e2e-calendario.mjs",
     "test:e2e:resultados": "node --env-file=.env scripts/e2e-resultados.mjs",
+    "test:e2e:lista": "node --env-file=.env scripts/e2e-lista-compartida.mjs",
+    "test:e2e:cuenta-de-mensajes": "node --env-file=.env scripts/e2e-cuenta-de-mensajes.mjs",
+    "test:e2e:embedded-signup": "node --env-file=.env scripts/e2e-embedded-signup.mjs",
+    "test:e2e:fijar": "node --env-file=.env scripts/e2e-fijar-chats.mjs",
+    "test:e2e:sesion": "node --env-file=.env scripts/e2e-sesion.mjs",
+    "test:e2e:api-mcp": "node --env-file=.env scripts/e2e-api-mcp.mjs",
+    "test:e2e:reacciones": "node --env-file=.env scripts/e2e-reacciones.mjs",
+    "test:e2e:no-se-pierda": "node --env-file=.env scripts/e2e-que-no-se-pierda-nada.mjs",
+    "test:e2e:una-respuesta": "node --env-file=.env scripts/e2e-una-respuesta.mjs",
     "eval:silencios": "esbuild scripts/eval-silencios.ts --bundle --platform=node --format=esm --outfile=.tmp-eval-silencios.mjs --alias:@=./src --log-level=warning && node --env-file=.env .tmp-eval-silencios.mjs",
     "test:watch": "vitest",
     "db:generate": "drizzle-kit generate",

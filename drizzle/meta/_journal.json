@@ -159,15 +159,85 @@
     {
       "idx": 22,
       "version": "7",
-      "when": 1793155585056,
-      "tag": "0022_whatsapp_zernio",
+      "when": 1792608627646,
+      "tag": "0022_responder_citando",
       "breakpoints": true
     },
     {
       "idx": 23,
       "version": "7",
-      "when": 1794099145539,
-      "tag": "0023_cuenta_de_mensajes",
+      "when": 1792758207285,
+      "tag": "0023_webhook_event",
+      "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1792778191260,
+      "tag": "0024_quick_reply",
+      "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1792779395979,
+      "tag": "0025_conversation_note",
+      "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1793222749562,
+      "tag": "0026_cuenta_de_mensajes",
+      "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1795471203210,
+      "tag": "0027_api_v1_mcp",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1795479066722,
+      "tag": "0028_fijar_chats",
+      "breakpoints": true
+    },
+    {
+      "idx": 29,
+      "version": "7",
+      "when": 1795523513693,
+      "tag": "0029_reacciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1795525506312,
+      "tag": "0030_que_no_se_pierda_nada",
+      "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1795526831299,
+      "tag": "0031_una_respuesta",
+      "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1795536351754,
+      "tag": "0032_whatsapp_zernio",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1795536536954,
+      "tag": "0033_kooni_saas",
       "breakpoints": true
     }
   ]

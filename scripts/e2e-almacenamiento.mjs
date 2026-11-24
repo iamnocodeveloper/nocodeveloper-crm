@@ -16,10 +16,10 @@
  *             quedó en el bucket se sigue sirviendo.
  *
  * Preparación (una vez):
- *   - MinIO: docker run -d --name vocero-037-minio -p 9100:9000 \
+ *   - MinIO: docker run -d --name nocodeveloper-037-minio -p 9100:9000 \
  *       --env-file .env.e2e-037-minio coollabsio/minio:RELEASE.2025-10-15T17-29-55Z server /data
  *     (minio/minio y minio/mc ya no están en Docker Hub; esta es la de Coolify)
- *     y el bucket: docker exec vocero-037-minio sh -c \
+ *     y el bucket: docker exec nocodeveloper-037-minio sh -c \
  *       'mc alias set local http://127.0.0.1:9000 "$MINIO_ROOT_USER" "$MINIO_ROOT_PASSWORD" && mc mb local/<bucket>'
  *     (`.env.e2e-037-minio` trae MINIO_ROOT_USER/PASSWORD generados en local;
  *     MinIO sin región propia acepta `us-east-1` y también `auto`).
@@ -36,7 +36,7 @@
  *
  * Variables del guion: APP_BASE_URL, MEDIA_DIR (relativo al cwd, como la app),
  * MEDIA_BUCKET_NAME, E2E_037_ESTADO (JSON del estado; por defecto en el tmp
- * del sistema) y E2E_037_MINIO (contenedor de MinIO; `vocero-037-minio`).
+ * del sistema) y E2E_037_MINIO (contenedor de MinIO; `nocodeveloper-037-minio`).
  * La fase bucket para y arranca ese contenedor con `docker` (AC4) y lee el
  * bucket con el `mc` de dentro del contenedor, con sus propias credenciales:
  * ninguna llave pasa por argv.
@@ -53,8 +53,8 @@ const BASE = process.env.APP_BASE_URL ?? "http://localhost:3000";
 const FASE = process.argv[2];
 const MEDIA_DIR = path.resolve(process.env.MEDIA_DIR ?? "./.dev-media");
 const BUCKET = process.env.MEDIA_BUCKET_NAME ?? "";
-const MINIO = process.env.E2E_037_MINIO ?? "vocero-037-minio";
-const ESTADO = process.env.E2E_037_ESTADO ?? path.join(os.tmpdir(), "vocero-e2e-037.json");
+const MINIO = process.env.E2E_037_MINIO ?? "nocodeveloper-037-minio";
+const ESTADO = process.env.E2E_037_ESTADO ?? path.join(os.tmpdir(), "nocodeveloper-e2e-037.json");
 const PN = "PN-E2E-037";
 const LEAD = "5214627037001";
 
@@ -178,7 +178,7 @@ async function minioVivo() {
 // ---------------------------------------------------------------- app
 
 async function login() {
-  const email = "e2e-037@vocero.test";
+  const email = "e2e-037@nocodeveloper.test";
   const password = "password-e2e-037";
   let su = await api("/api/auth/sign-up/email", {
     method: "POST",

@@ -24,17 +24,17 @@ const cuentas: ZernioAccount[] = [
   {
     _id: FB,
     platform: "facebook",
-    username: "kevinbelier",
-    displayName: "Kevin Belier",
+    username: "minegocio",
+    displayName: "Ana Torres",
     profileId: { _id: PERFIL },
-    metadata: { selectedPageId: "620183174507365", selectedPageName: "Kevin Belier" },
+    metadata: { selectedPageId: "620183174507365", selectedPageName: "Ana Torres" },
     isActive: true,
     platformStatus: "active",
   },
   {
     _id: IG,
     platform: "instagram",
-    username: "kevinbelier.ia",
+    username: "minegocio.ia",
     platformUserId: "24851359284498146",
     profileId: { _id: PERFIL },
     isActive: true,
@@ -43,7 +43,7 @@ const cuentas: ZernioAccount[] = [
   {
     _id: TT,
     platform: "tiktok",
-    username: "kevin.belier",
+    username: "ana.torres",
     profileId: { _id: PERFIL },
     isActive: true,
     platformStatus: "active",
@@ -73,7 +73,7 @@ describe("zernio · qué cuenta se está conectando (D1)", () => {
     if (r.ok) return;
     expect(r.code).toBe("choose_account");
     expect(r.candidates).toEqual([
-      { id: IG, name: "@kevinbelier.ia" },
+      { id: IG, name: "@minegocio.ia" },
       { id: "otra-ig", name: "@cliente" },
     ]);
   });
@@ -126,8 +126,8 @@ describe("zernio · qué cuenta se está conectando (D1)", () => {
   });
 
   it("el nombre es el que una persona reconoce", () => {
-    expect(zernioAccountName(cuentas[0]!)).toBe("Kevin Belier");
-    expect(zernioAccountName(cuentas[1]!)).toBe("@kevinbelier.ia");
+    expect(zernioAccountName(cuentas[0]!)).toBe("Ana Torres");
+    expect(zernioAccountName(cuentas[1]!)).toBe("@minegocio.ia");
     expect(zernioAccountName({ _id: "x", platform: "facebook", username: "pagina" })).toBe("pagina");
     expect(zernioAccountName({ _id: "x", platform: "tiktok" })).toBe("x");
   });
@@ -192,7 +192,7 @@ describe("zernio · el webhook hacia esta instancia", () => {
   const aqui = `https://crm.ejemplo.com/api/webhooks/ig/${SEGMENTO}`;
   const w = (over: Partial<ZernioWebhook> = {}): ZernioWebhook => ({
     _id: "w1",
-    name: "vocero-crm.ejemplo.com",
+    name: "nocodeveloper-crm.ejemplo.com",
     url: aqui,
     secret: "s",
     events: ["message.received"],

@@ -1,6 +1,6 @@
 {
-  "id": "f2380657-ee43-41b1-ae5b-8f33a2bb1a20",
-  "prevId": "8532e6d0-d769-45aa-b62c-f4ca5215ae0d",
+  "id": "a7571216-7979-4d36-a0cf-71e0d5dd5005",
+  "prevId": "d729acc8-3ae5-4d7d-93ee-bb854478a704",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -3238,6 +3238,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "reply_to_wa_message_id": {
+          "name": "reply_to_wa_message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "wa_timestamp": {
           "name": "wa_timestamp",
           "type": "timestamp",
@@ -3530,12 +3536,6 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "messaging_account_id": {
-          "name": "messaging_account_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "phone_number_id": {
           "name": "phone_number_id",
@@ -4376,8 +4376,8 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
-    "public.whatsapp_zernio_credentials": {
-      "name": "whatsapp_zernio_credentials",
+    "public.webhook_event": {
+      "name": "webhook_event",
       "schema": "",
       "columns": {
         "id": {
@@ -4392,60 +4392,62 @@
           "primaryKey": false,
           "notNull": true
         },
-        "account_ref": {
-          "name": "account_ref",
+        "fuente": {
+          "name": "fuente",
           "type": "text",
           "primaryKey": false,
           "notNull": true
         },
-        "display_phone_number": {
-          "name": "display_phone_number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "token_cipher": {
-          "name": "token_cipher",
-          "type": "text",
+        "payload": {
+          "name": "payload",
+          "type": "jsonb",
           "primaryKey": false,
           "notNull": true
         },
-        "token_iv": {
-          "name": "token_iv",
+        "huella": {
+          "name": "huella",
           "type": "text",
           "primaryKey": false,
           "notNull": true
-        },
-        "token_tag": {
-          "name": "token_tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "webhook_secret_cipher": {
-          "name": "webhook_secret_cipher",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "webhook_secret_iv": {
-          "name": "webhook_secret_iv",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "webhook_secret_tag": {
-          "name": "webhook_secret_tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
         },
         "status": {
           "name": "status",
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'connected'"
+          "default": "'pendiente'"
+        },
+        "attempts": {
+          "name": "attempts",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true,
+          "default": 0
+        },
+        "not_before": {
+          "name": "not_before",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "leased_until": {
+          "name": "leased_until",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "last_error": {
+          "name": "last_error",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "processed_at": {
+          "name": "processed_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": false
         },
         "created_at": {
           "name": "created_at",
@@ -4463,11 +4465,11 @@
         }
       },
       "indexes": {
-        "whatsapp_zernio_credentials_org_uq": {
-          "name": "whatsapp_zernio_credentials_org_uq",
+        "webhook_event_huella_uq": {
+          "name": "webhook_event_huella_uq",
           "columns": [
             {
-              "expression": "organization_id",
+              "expression": "huella",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -4478,26 +4480,54 @@
           "method": "btree",
           "with": {}
         },
-        "whatsapp_zernio_credentials_account_ref_uq": {
-          "name": "whatsapp_zernio_credentials_account_ref_uq",
+        "webhook_event_barrido_idx": {
+          "name": "webhook_event_barrido_idx",
           "columns": [
             {
-              "expression": "account_ref",
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "not_before",
               "isExpression": false,
               "asc": true,
               "nulls": "last"
             }
           ],
-          "isUnique": true,
+          "isUnique": false,
+          "where": "\"webhook_event\".\"status\" in ('pendiente', 'en_proceso')",
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "webhook_event_org_status_idx": {
+          "name": "webhook_event_org_status_idx",
+          "columns": [
+            {
+              "expression": "organization_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "status",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
           "concurrently": false,
           "method": "btree",
           "with": {}
         }
       },
       "foreignKeys": {
-        "whatsapp_zernio_credentials_organization_id_organization_id_fk": {
-          "name": "whatsapp_zernio_credentials_organization_id_organization_id_fk",
-          "tableFrom": "whatsapp_zernio_credentials",
+        "webhook_event_organization_id_organization_id_fk": {
+          "name": "webhook_event_organization_id_organization_id_fk",
+          "tableFrom": "webhook_event",
           "tableTo": "organization",
           "columnsFrom": [
             "organization_id"

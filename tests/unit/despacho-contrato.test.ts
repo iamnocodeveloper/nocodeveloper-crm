@@ -20,7 +20,7 @@ import { entregar } from "@/server/brains/deliver";
  * cerebro verifica la firma sobre el cuerpo crudo, así que reordenar una clave
  * o cambiar cómo se serializa una fecha rompe todas las instalaciones a la
  * vez, con un 401 mudo. La prueba gemela vive en el repo del cerebro
- * (nea-agent) con este mismo cuerpo y esta misma firma: cambiar un lado sin el
+ * (cerebro-externo) con este mismo cuerpo y esta misma firma: cambiar un lado sin el
  * otro rompe una prueba, no una instalación.
  */
 
@@ -291,7 +291,7 @@ describe("qué entiende el CRM de la respuesta del cerebro", () => {
 });
 
 describe("entregar — el POST firmado", () => {
-  const destino = { url: "http://nea:8000/vocero/dispatch", secret: SECRETO };
+  const destino = { url: "http://nea:8000/nocodeveloper/dispatch", secret: SECRETO };
 
   it("manda el cuerpo que firma, con las cabeceras del contrato y sin seguir redirecciones", async () => {
     const llamadas: { url: string; init: RequestInit }[] = [];

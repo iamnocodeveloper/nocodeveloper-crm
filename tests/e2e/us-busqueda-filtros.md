@@ -1,8 +1,8 @@
 # Guion E2E — Búsqueda de la Bandeja y filtro por etapa del embudo
 
 > Automatizado en `scripts/e2e-search-filters.mjs` (26 checks, Playwright
-> contra `pnpm dev` con wa-mock). Nace del reporte de Kevin del 2026-08-05:
-> «escribo Kevin en el buscador y no me da los resultados».
+> contra `pnpm dev` con wa-mock). Nace del reporte de Ana del 2026-08-05:
+> «escribo Ana en el buscador y no me da los resultados».
 
 ## El fallo original: teclear mientras la página aún carga
 
@@ -35,7 +35,7 @@ al montar se adopta lo que ya haya en el DOM.
 
 ## Filtro por etapa del embudo
 
-7. Bandeja: selector junto a «Todas / No leídas», con las etapas presentes.
+7. Bandeja: selector dentro del menú «Filtrar» (052), con las etapas presentes.
    ✅ Filtrar deja solo esa etapa; «Toda etapa» restaura.
    ✅ Búsqueda + etapa se combinan (nunca se contradicen).
 8. Contactos: selector con las etapas del pipeline **completo** (orden real,

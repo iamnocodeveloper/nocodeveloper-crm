@@ -108,7 +108,7 @@ const eventosDe = (leadId) =>
       where lead_id = ${leadId} order by occurred_at, id`;
 
 async function preparar() {
-  const email = "e2e@vocero.test";
+  const email = "e2e@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", {
     method: "POST",

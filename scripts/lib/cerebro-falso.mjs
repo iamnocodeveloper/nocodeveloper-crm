@@ -9,7 +9,7 @@
  *
  *   - `GET /health` → 200 `{status:"ok", mode, version, llm:"crm"}` (o 503, o
  *     nunca contesta: `estado.salud`).
- *   - `POST <ruta del despacho>` → verifica la firma `X-Vocero-Signature`
+ *   - `POST <ruta del despacho>` → verifica la firma `X-Nocodeveloper-Signature`
  *     sobre el cuerpo CRUDO con `BOT_API_KEY`, acusa 200 (o 500, 422, tarde o
  *     nunca: `estado.modo`) y DESPUÉS contesta por `/api/bot/*`:
  *       · texto con «humano» o «asesor» → avisa al cliente por
@@ -27,6 +27,16 @@
  *         y luego contesta como siempre.
  *     Los avisos `conversation.deleted` solo se acusan.
  *
+ * 075 — Tres perillas más, por despacho, para la red de seguridad y el turno
+ * superado (todas apagadas por defecto: los demás guiones no cambian):
+ *   · `estado.conDispatchId` (o una función del evento): si el despacho
+ *     anuncia `dispatch_superado`, responde con `dispatchId` y
+ *     `dropIfSuperseded: true`, como Nea en Cloud. Ante el 409 calla.
+ *   · `estado.callar(evento)`: si devuelve true, acusa recibo y no contesta
+ *     nada (el turno que se cuelga).
+ *   · `estado.demora(evento)`: cuánto «piensa» ese despacho (ms); sin ella,
+ *     `demoraMs`. Sirve para responder tarde.
+ *
  * Todo lo recibido queda en `estado.recibidos` (con `firmaOk`, cabeceras y la
  * hora) y lo que contestó el CRM a cada respuesta, en `estado.respuestas`.
  *
@@ -36,7 +46,7 @@
  * La app (`pnpm dev`) y el guion leen el MISMO archivo de entorno:
  *
  *   APP_BASE_URL=http://localhost:3260        PORT=3260
- *   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/vocero_036_e2e
+ *   DATABASE_URL=postgresql://postgres:postgres@localhost:5433/nocodeveloper_036_e2e
  *   WA_MOCK_ENABLED=true
  *   META_GRAPH_BASE_URL=http://localhost:3260/api/dev/wa-mock/graph
  *   OPENROUTER_BASE_URL=http://localhost:3260/api/dev/ai-mock
@@ -48,7 +58,7 @@
  *   AGENT_COALESCE_MS=1500                     AGENDA=on
  *   MEDIA_DIR=./.dev-media
  *   BOT_API_KEY=<16+ caracteres>
- *   BRAIN_DISPATCH_URL=http://127.0.0.1:3261/vocero/dispatch
+ *   BRAIN_DISPATCH_URL=http://127.0.0.1:3261/nocodeveloper/dispatch
  *   (sin BRAIN_HEALTH_URL: el CRM pregunta al /health del mismo origen)
  *   + BETTER_AUTH_SECRET, ENCRYPTION_KEY, META_WEBHOOK_VERIFY_TOKEN
  *
@@ -88,7 +98,7 @@ export function urlDelDespacho(env = process.env) {
   } catch {
     console.error(
       "Falta BRAIN_DISPATCH_URL. Arranca la app (y corre el guion) con algo como\n" +
-        "  BRAIN_DISPATCH_URL=http://127.0.0.1:3261/vocero/dispatch\n" +
+        "  BRAIN_DISPATCH_URL=http://127.0.0.1:3261/nocodeveloper/dispatch\n" +
         "Ver la configuración estándar en scripts/lib/cerebro-falso.mjs."
     );
     process.exit(1);
@@ -153,6 +163,12 @@ export async function levantarCerebroFalso({
     /** 038 — Lo que el contexto le dijo antes de mover la etapa. */
     contextos: [],
     saludPedidos: 0,
+    /** 075 — boolean o `(evento) => boolean`. */
+    conDispatchId: false,
+    /** 075 — `(evento) => boolean`: acusa y no contesta. */
+    callar: null,
+    /** 075 — `(evento) => ms`: cuánto piensa ese despacho. */
+    demora: null,
   };
   /** Respuestas en vuelo: `esperar()` las deja terminar antes de cerrar. */
   const enVuelo = new Set();
@@ -165,7 +181,15 @@ export async function levantarCerebroFalso({
         body: JSON.stringify(cuerpo),
       });
       const json = await r.json().catch(() => null);
-      estado.respuestas.push({ convId, tipo, ruta, status: r.status, json, texto: cuerpo.text ?? null });
+      estado.respuestas.push({
+        convId,
+        tipo,
+        ruta,
+        status: r.status,
+        json,
+        texto: cuerpo.text ?? null,
+        dispatchId: cuerpo.dispatchId ?? null,
+      });
       return { status: r.status, json };
     } catch (err) {
       estado.respuestas.push({ convId, tipo, ruta, status: 0, error: String(err) });
@@ -215,8 +239,17 @@ export async function levantarCerebroFalso({
     await alCrm("/api/bot/stage", { conversationId: convId, stage: etapa }, convId, "etapa");
   }
 
+  /** 075 — Lo que Nea agrega a su respuesta si el CRM anuncia el turno superado. */
+  function sobreDelTurno(evento) {
+    const quiere =
+      typeof estado.conDispatchId === "function" ? estado.conDispatchId(evento) : estado.conDispatchId;
+    if (!quiere || !evento.capabilities?.includes("dispatch_superado")) return {};
+    return { dispatchId: evento.dispatchId, dropIfSuperseded: true };
+  }
+
   async function contestar(evento) {
     const convId = evento.conversation.id;
+    if (typeof estado.callar === "function" && estado.callar(evento)) return;
     const ultimo = evento.messages.at(-1) ?? {};
     const texto = ultimo.text ?? ultimo.caption ?? "";
     // Como Nea con el candado de cierre: ante el relleno final, calla.
@@ -228,7 +261,12 @@ export async function levantarCerebroFalso({
     }
     if (/califica/i.test(texto)) await moverEtapa(convId, texto);
     const respuesta = await pensar(texto);
-    await alCrm("/api/bot/messages", { conversationId: convId, text: respuesta }, convId, "mensaje");
+    await alCrm(
+      "/api/bot/messages",
+      { conversationId: convId, text: respuesta, ...sobreDelTurno(evento) },
+      convId,
+      "mensaje"
+    );
   }
 
   const debeContestar = (evento) =>
@@ -267,11 +305,11 @@ export async function levantarCerebroFalso({
         modo,
         crudo: crudo.toString("utf8"),
         evento,
-        firmaOk: firmaValida(botKey, crudo, req.headers["x-vocero-signature"]),
+        firmaOk: firmaValida(botKey, crudo, req.headers["x-nocodeveloper-signature"]),
         cabeceras: {
-          dispatch: req.headers["x-vocero-dispatch-id"] ?? null,
-          org: req.headers["x-vocero-organization"] ?? null,
-          evento: req.headers["x-vocero-event"] ?? null,
+          dispatch: req.headers["x-nocodeveloper-dispatch-id"] ?? null,
+          org: req.headers["x-nocodeveloper-organization"] ?? null,
+          evento: req.headers["x-nocodeveloper-event"] ?? null,
           tipo: req.headers["content-type"] ?? null,
         },
       });
@@ -279,7 +317,8 @@ export async function levantarCerebroFalso({
         res.writeHead(status, { "content-type": "application/json" });
         res.end(JSON.stringify(status < 300 ? { status: "ok" } : { error: "simulado" }));
         if (status >= 300 || !debeContestar(evento)) return;
-        const p = new Promise((r) => setTimeout(r, estado.demoraMs))
+        const demora = typeof estado.demora === "function" ? estado.demora(evento) : estado.demoraMs;
+        const p = new Promise((r) => setTimeout(r, demora ?? estado.demoraMs))
           .then(() => contestar(evento))
           .finally(() => enVuelo.delete(p));
         enVuelo.add(p);

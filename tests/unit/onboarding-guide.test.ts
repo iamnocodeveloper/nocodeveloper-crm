@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 /**
  * #86 — La guía de inicio: de los pasos verificados (`onboardingStatus`) a
  * lo que ve el dueño, y cuándo es la primera pantalla. Puerto de la prueba de
- * Vocero Cloud con los pasos de la raíz: aquí no hay modelo de plataforma,
+ * Nocodeveloper Cloud con los pasos de la raíz: aquí no hay modelo de plataforma,
  * dueño invitado, cerebro compartido ni cobertura.
  */
 

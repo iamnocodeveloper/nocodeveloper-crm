@@ -47,7 +47,7 @@ const graph = (path, opts = {}) =>
 
 async function main() {
   console.log("== Setup ==");
-  const email = "e2e-035@vocero.test";
+  const email = "e2e-035@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", { method: "POST", body: JSON.stringify({ email, password, name: "Operador 035" }) });
   if (!su.res.ok) su = await api("/api/auth/sign-in/email", { method: "POST", body: JSON.stringify({ email, password }) });

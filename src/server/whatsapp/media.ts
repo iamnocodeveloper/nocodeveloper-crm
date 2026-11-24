@@ -8,6 +8,13 @@ import {
   type Credentials,
 } from "@/server/whatsapp/credentials";
 import { isForbiddenUploadMime } from "@/server/whatsapp/media-headers";
+import { descargarAdjuntoRemoto } from "@/server/inbox/descarga-remota";
+import {
+  origenOf,
+  sourceUrlOf,
+  TOPE_ADJUNTO_REMOTO,
+  type KindRemoto,
+} from "@/server/inbox/remote-media";
 import { getWhatsappZernioCredentialsByOrg } from "@/server/whatsapp/zernio-credentials";
 import { ZERNIO_BASE } from "@/server/zernio";
 
@@ -81,7 +88,10 @@ export class MediaValidationError extends Error {
  * documento (#78): el navegador de quien los abra los trataría como una
  * página, y se servirían desde el origen del CRM.
  */
-export function validateOutgoing(mime: string, sizeBytes: number) {
+export function validateOutgoing(mimeConParametros: string, sizeBytes: number) {
+  // 044: `audio/ogg; codecs=opus` (la nota de voz, o lo que graba Firefox)
+  // trae parámetros; el tipo es lo de antes del `;`.
+  const mime = mimeConParametros.split(";")[0]!.trim();
   if (!/^[\w.-]+\/[\w.+-]+$/.test(mime)) {
     throw new MediaValidationError("unsupported_type", "Tipo de archivo no reconocido");
   }
@@ -248,7 +258,12 @@ export async function downloadZernioMedia(
  */
 export async function ensureAssetAvailable(
   organizationId: string,
-  assetId: string
+  assetId: string,
+  /**
+   * Bajarlo aunque figure como disponible: el archivo se perdió (volumen sin
+   * montar, restauración a medias) y la fila todavía no lo sabe.
+   */
+  opts: { forzar?: boolean } = {}
 ): Promise<typeof schema.mediaAsset.$inferSelect | null> {
   const db = getDb();
   const rows = await db
@@ -258,23 +273,33 @@ export async function ensureAssetAvailable(
     .limit(1);
   const asset = rows[0];
   if (!asset || asset.organizationId !== organizationId) return null;
-  if (asset.fetchStatus === "available") return asset;
-  const zernioUrl = asset.waMediaId ? null : zernioMediaUrl(asset.payload);
-  if (!asset.waMediaId && !zernioUrl) return null; // location/contacts no tienen binario
+  if (asset.fetchStatus === "available" && !opts.forzar) return asset;
 
-  const download = async () => {
-    if (zernioUrl) {
-      const zc = await getWhatsappZernioCredentialsByOrg(organizationId);
-      return zc ? downloadZernioMedia(zc.token, zernioUrl) : null;
-    }
+  // 074: Instagram, Messenger y TikTok traen una URL firmada en vez de un id
+  // de Graph. location/contacts no tienen ninguna de las dos: no hay binario.
+  const sourceUrl = sourceUrlOf(asset.payload);
+  // 031: WhatsApp por Zernio guarda la URL de su API, que pide la llave.
+  const zernioUrl = asset.waMediaId ? null : zernioMediaUrl(asset.payload);
+  if (!asset.waMediaId && !sourceUrl && !zernioUrl) return null;
+
+  let descargar: () => Promise<{ data: Buffer; mimeType: string | null; fileSize: number }>;
+  if (zernioUrl) {
+    const zc = await getWhatsappZernioCredentialsByOrg(organizationId);
+    if (!zc) return null;
+    descargar = () => downloadZernioMedia(zc.token, zernioUrl);
+  } else if (asset.waMediaId) {
     const creds = await getCredentialsByOrg(organizationId);
-    return creds ? downloadGraphMedia(creds.token, asset.waMediaId!) : null;
-  };
+    if (!creds) return null;
+    const waMediaId = asset.waMediaId;
+    descargar = () => downloadGraphMedia(creds.token, waMediaId);
+  } else {
+    const tope = TOPE_ADJUNTO_REMOTO[asset.kind as KindRemoto] ?? TOPE_ADJUNTO_REMOTO.document;
+    const origen = origenOf(asset.payload);
+    descargar = () => descargarAdjuntoRemoto(sourceUrl!, origen, tope);
+  }
 
   try {
-    const bajado = await download();
-    if (!bajado) return null;
-    const { data, mimeType, fileSize } = bajado;
+    const { data, mimeType, fileSize } = await descargar();
     const storagePath = await saveMediaFile(organizationId, assetId, data, mimeType ?? undefined);
     const updated = await db
       .update(schema.mediaAsset)
@@ -296,6 +321,35 @@ export async function ensureAssetAvailable(
       .set({ fetchStatus: "failed", fetchError: message, updatedAt: new Date() })
       .where(eq(schema.mediaAsset.id, assetId));
     console.warn(`[media] descarga del asset ${assetId} falló: ${message}`);
+    return null;
+  }
+}
+
+/**
+ * Lee el archivo de un adjunto ya disponible.
+ *
+ * Si la base dice «disponible» pero el archivo no está —el contenedor se
+ * redesplegó sin un volumen en `/data` y se llevó los adjuntos—, se vuelve a
+ * bajar de Meta una vez, que los conserva unos 30 días. Sin esto, el adjunto
+ * quedaba en 410 para siempre aunque Meta todavía lo tuviera. `null` si ni
+ * así se puede: el archivo ya no existe en ningún lado.
+ */
+export async function leerAdjunto(
+  organizationId: string,
+  asset: typeof schema.mediaAsset.$inferSelect
+): Promise<{ asset: typeof schema.mediaAsset.$inferSelect; data: Buffer } | null> {
+  try {
+    return { asset, data: await readMediaFile(organizationId, asset.id) };
+  } catch {
+    // El archivo no está: se intenta recuperar de Meta.
+  }
+  const recuperado = await ensureAssetAvailable(organizationId, asset.id, { forzar: true });
+  if (!recuperado || recuperado.fetchStatus !== "available") return null;
+  try {
+    const data = await readMediaFile(organizationId, asset.id);
+    console.log(`[media] ${asset.id} no estaba en el volumen; se recuperó de Meta`);
+    return { asset: recuperado, data };
+  } catch {
     return null;
   }
 }

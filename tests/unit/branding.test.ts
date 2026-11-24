@@ -10,8 +10,8 @@ import {
   resolveNavAccentSet,
 } from "@/lib/branding";
 
-const DARK_BG = "#1e241b";
-const NAV_BG = "#070806";
+const DARK_BG = "#1a2320";
+const NAV_BG = "#0b1327";
 
 /** Contraste WCAG entre dos hex, para afirmar sobre legibilidad y no sobre
  *  valores concretos: lo que importa es que se LEA, no que dé cierto color. */
@@ -63,15 +63,20 @@ describe("white-label: acento", () => {
     expect(lum).toBeLessThan(0xd0);
   });
 
-  it("hex inválido cae al lima por defecto", () => {
-    expect(resolveAccentSet("rojo")).toEqual(ACCENT_PRESETS["#c6f24e"]!.set);
+  it("hex inválido cae al default (el azul Nocodeveloper)", () => {
+    expect(resolveAccentSet("rojo")).toEqual(ACCENT_PRESETS["#0d5bff"]!.set);
   });
 
-  it("la lima Nocodeveloper es el default y trae sus valores exactos", () => {
-    expect(DEFAULT_BRANDING.accent).toBe("#C6F24E");
-    expect(resolveAccentSet(DEFAULT_BRANDING.accent)).toEqual(
-      ACCENT_PRESETS["#c6f24e"]!.set
-    );
+  it("el azul Nocodeveloper es el default y trae los valores exactos de la landing", () => {
+    expect(DEFAULT_BRANDING.accent).toBe("#0d5bff");
+    expect(resolveAccentSet(DEFAULT_BRANDING.accent)).toEqual({
+      accent: "#0d5bff",
+      hover: "#0a4de6",
+      soft: "#d3e2ff",
+      tint: "#ebf1ff",
+      text: "#0038d8",
+      fg: "#ffffff",
+    });
   });
 });
 
@@ -90,8 +95,8 @@ describe("white-label: acento en tema oscuro", () => {
     }
   });
 
-  it("la lima lleva tinta oscura en oscuro", () => {
-    expect(resolveAccentSet(DEFAULT_BRANDING.accent, "dark").fg).toBe("#0f1419");
+  it("el azul Nocodeveloper conserva la tinta blanca en oscuro", () => {
+    expect(resolveAccentSet(DEFAULT_BRANDING.accent, "dark").fg).toBe("#ffffff");
   });
 
   it("los presets NO se aplican tal cual: están calculados para fondo blanco", () => {
@@ -104,7 +109,7 @@ describe("white-label: acento en tema oscuro", () => {
 
   it("hex inválido en oscuro también cae al acento por defecto", () => {
     expect(resolveAccentSet("rojo", "dark")).toEqual(
-      resolveAccentSet(DEFAULT_BRANDING.accent, "dark")
+      resolveAccentSet("#0d5bff", "dark")
     );
   });
 
@@ -141,14 +146,16 @@ describe("white-label: barra lateral bicolor (.nav-dark)", () => {
     expect(nav).not.toContain(resolveAccentSet("#3f5972", "light").accent);
   });
 
-  it("con la lima, la barra usa el lima brillante sobre obsidiana", () => {
+  it("con el azul Nocodeveloper, la barra se ve como siempre", () => {
+    // La receta de la barra es la de antes: el ítem activo del tema claro no
+    // cambia aunque el tema oscuro de la página sí.
     expect(resolveNavAccentSet(DEFAULT_BRANDING.accent)).toEqual({
-      accent: "#c6f24e",
-      hover: "#cff46a",
-      soft: "#3c4a1a",
-      tint: "#1e240f",
-      text: "#d6f680",
-      fg: "#0f1419",
+      accent: "#256bff",
+      hover: "#4883ff",
+      soft: "#122c63",
+      tint: "#0e1e41",
+      text: "#6295ff",
+      fg: "#ffffff",
     });
   });
 
@@ -195,22 +202,21 @@ describe("tema oscuro: las superficies se distinguen", () => {
     }
   });
 
-  it("en claro, el chip flota sobre el papel y el hover sigue al hueco", () => {
-    expect(claro["--chip-bg"]).toBe("#ffffff");
-    expect(contrast(claro["--chip-bg"]!, claro["--bg"]!)).toBeGreaterThan(1.02);
+  it("en claro, chips y hover se ven igual que antes", () => {
+    expect(claro["--chip-bg"]).toBe(claro["--bg"]);
     expect(claro["--row-hover"]).toBe(claro["--bg-subtle"]);
   });
 });
 
 describe("white-label: normalización", () => {
-  it("nombre vacío o nulo → default 'Nocodeveloper CRM'; se recorta a 30", () => {
-    expect(normalizeBranding(null).name).toBe("Nocodeveloper CRM");
-    expect(normalizeBranding({ name: "   " }).name).toBe("Nocodeveloper CRM");
+  it("nombre vacío o nulo → default 'Nocodeveloper'; se recorta a 30", () => {
+    expect(normalizeBranding(null).name).toBe("Nocodeveloper");
+    expect(normalizeBranding({ name: "   " }).name).toBe("Nocodeveloper");
     expect(normalizeBranding({ name: "x".repeat(50) }).name).toHaveLength(30);
   });
 
   it("acento inválido → default", () => {
-    expect(normalizeBranding({ accent: "azul" }).accent).toBe("#C6F24E");
+    expect(normalizeBranding({ accent: "azul" }).accent).toBe("#0d5bff");
     expect(normalizeBranding({ accent: "#3F6B66" }).accent).toBe("#3f6b66");
   });
 });

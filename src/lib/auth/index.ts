@@ -18,16 +18,16 @@ import { isPublicSignupAllowed } from "@/server/auth/registration";
  * desde fuera: solo envuelve llamadas server-side.
  */
 const globalForSignup = globalThis as unknown as {
-  __voceroInternalSignup?: AsyncLocalStorage<boolean>;
+  __nocodeveloperInternalSignup?: AsyncLocalStorage<boolean>;
 };
 
 // En globalThis: los módulos pueden evaluarse más de una vez (una por ruta en
 // dev) y todas las copias deben compartir el mismo contexto.
 function internalSignupContext(): AsyncLocalStorage<boolean> {
-  if (!globalForSignup.__voceroInternalSignup) {
-    globalForSignup.__voceroInternalSignup = new AsyncLocalStorage<boolean>();
+  if (!globalForSignup.__nocodeveloperInternalSignup) {
+    globalForSignup.__nocodeveloperInternalSignup = new AsyncLocalStorage<boolean>();
   }
-  return globalForSignup.__voceroInternalSignup;
+  return globalForSignup.__nocodeveloperInternalSignup;
 }
 
 export function runInternalSignup<T>(fn: () => Promise<T>): Promise<T> {
@@ -80,7 +80,7 @@ function createAuth() {
           if (!isInternalSignup() && !(await isPublicSignupAllowed())) {
             throw new APIError("FORBIDDEN", {
               message:
-                "El registro está cerrado: esta instancia ya tiene su organización",
+                "El registro está cerrado",
             });
           }
         }
@@ -90,7 +90,10 @@ function createAuth() {
       user: {
         create: {
           after: async (user) => {
-            await onUserCreated(user.id, user.name);
+            await onUserCreated(user.id, user.name, {
+              email: user.email,
+              internal: isInternalSignup(),
+            });
           },
         },
       },
@@ -112,9 +115,9 @@ function createAuth() {
 
 type Auth = ReturnType<typeof createAuth>;
 
-const globalForAuth = globalThis as unknown as { __voceroAuth?: Auth };
+const globalForAuth = globalThis as unknown as { __nocodeveloperAuth?: Auth };
 
 export function getAuth(): Auth {
-  if (!globalForAuth.__voceroAuth) globalForAuth.__voceroAuth = createAuth();
-  return globalForAuth.__voceroAuth;
+  if (!globalForAuth.__nocodeveloperAuth) globalForAuth.__nocodeveloperAuth = createAuth();
+  return globalForAuth.__nocodeveloperAuth;
 }

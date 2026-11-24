@@ -1,10 +1,10 @@
-import { after } from "next/server";
 import { getEnv } from "@/lib/env";
+import { recibirEvento } from "@/server/webhooks/recibir";
 import { isValidWebhookToken } from "@/server/inbox/webhook";
 import { channelDisabledResponse } from "@/server/channels/enabled";
 import { whatsappZernioEnabled } from "@/server/whatsapp/zernio-flag";
 import { zernioSignatureFrom } from "@/server/zernio";
-import { isAuthenticZernioDelivery, processZernioPayload } from "@/server/zernio/dispatch";
+import { isAuthenticZernioDelivery } from "@/server/zernio/dispatch";
 
 /**
  * 031 — Webhook de Zernio para WhatsApp por la API oficial.
@@ -55,15 +55,7 @@ export async function POST(req: Request, { params }: Params) {
     return new Response(null, { status: 401 });
   }
 
-  // Zernio corta a los 5 segundos y reintenta: se acusa recibo YA y se procesa
-  // fuera de la ruta.
-  after(async () => {
-    try {
-      await processZernioPayload(payload);
-    } catch (err) {
-      console.error("[zernio-wa] error procesando payload:", err);
-    }
-  });
-
-  return Response.json({ received: true });
+  // Zernio corta a los 5 segundos y reintenta: se guarda, se acusa recibo YA
+  // y se procesa fuera de la ruta (047: si falla, lo reintenta el barrido).
+  return recibirEvento("zernio", payload, rawBody, "zernio-wa");
 }

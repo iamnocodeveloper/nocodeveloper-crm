@@ -103,6 +103,7 @@ describe("017 · normalizeMetaPagePayload (qué entra y qué se descarta)", () =
       timestamp: "1770000123",
       profileName: null,
       threadRef: null,
+      attachments: [],
     });
   });
 
@@ -325,7 +326,7 @@ describe("017 · reparto de Zernio por plataforma (un webhook, varios canales)",
     expect(zernioTargetChannel(zernioEvent({ account: { id: ACCOUNT, platform: "MESSENGER" } }))).toBe("messenger");
   });
 
-  it("una plataforma que Vocero no atiende no es de nadie", () => {
+  it("una plataforma que Nocodeveloper no atiende no es de nadie", () => {
     // 022: `tiktok` salió de esta lista: ya es un canal (tests/unit/tiktok.test.ts).
     // 031: `whatsapp` también: es el transporte de WhatsApp por Zernio
     // (tests/unit/whatsapp-zernio.test.ts).

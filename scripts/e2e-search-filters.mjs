@@ -11,7 +11,7 @@
  */
 import { chromium } from "playwright";
 
-const BASE = "http://localhost:3000";
+const BASE = process.env.APP_BASE_URL ?? "http://localhost:3000";
 const PN = "PN-SEARCH-1";
 const S = Math.random().toString(36).slice(2, 6).toUpperCase();
 let failures = 0;
@@ -30,12 +30,12 @@ const req = ctx.request;
 console.log("== Setup ==");
 let r = await req.post(`${BASE}/api/auth/sign-up/email`, {
   headers: { origin: BASE },
-  data: { email: "e2e@vocero.test", password: "password-e2e-123", name: "Operador E2E" },
+  data: { email: process.env.E2E_EMAIL ?? "e2e@nocodeveloper.test", password: process.env.E2E_PASSWORD ?? "password-e2e-123", name: "Operador E2E" },
 });
 if (!r.ok())
   r = await req.post(`${BASE}/api/auth/sign-in/email`, {
     headers: { origin: BASE },
-    data: { email: "e2e@vocero.test", password: "password-e2e-123" },
+    data: { email: process.env.E2E_EMAIL ?? "e2e@nocodeveloper.test", password: process.env.E2E_PASSWORD ?? "password-e2e-123" },
   });
 ok("login", r.ok());
 await req.put(`${BASE}/api/settings/whatsapp`, {
@@ -47,7 +47,7 @@ const PHONE = `521462${SUF}`; // Meta manda 521…; el CRM canoniza a 52…
 const PHONE2 = `521559${SUF}`;
 const FMT = `+52 462 ${SUF.slice(0, 3)} ${SUF.slice(3)}`;
 const people = [
-  { from: PHONE, name: `Zoraida${S} Belier`, text: "hola, vi su anuncio" },
+  { from: PHONE, name: `Zoraida${S} Torres`, text: "hola, vi su anuncio" },
   { from: PHONE2, name: `Josué${S} Ramírez`, text: "quiero informes" },
   { fromUserId: `bsu_${S}`, name: `Anónima${S} Sin Tel`, text: "buenas" },
 ];
@@ -100,7 +100,7 @@ ok("teléfono con guiones", has(list, `Zoraida${S}`), JSON.stringify(list));
 list = await search("vi su anuncio");
 ok("NO busca dentro de los mensajes (el nombre del dueño los inunda)",
    !has(list, `Zoraida${S}`), JSON.stringify(list));
-list = await search(`Zoraida${S} Belier`);
+list = await search(`Zoraida${S} Torres`);
 ok("nombre completo, con espacio, coincide", has(list, `Zoraida${S}`), JSON.stringify(list.length));
 list = await search(`zzz-no-existe-${S}`);
 ok("sin coincidencias → lista vacía", list.length === 0, JSON.stringify(list));
@@ -115,6 +115,8 @@ ok("el botón X limpia la búsqueda", (await box.inputValue()) === "");
 ok("y vuelven todas las conversaciones", (await rows()).length >= 3);
 
 console.log("\n== Bandeja: filtro por etapa del embudo ==");
+// 052 (enmienda): la etapa vive en el menú «Filtrar».
+await page.getByRole("button", { name: /^Filtrar/ }).click();
 const sel = page.getByLabel("Filtrar por etapa del embudo");
 ok("el selector de etapa existe", await sel.isVisible());
 const options = await sel.locator("option").allInnerTexts();
@@ -131,6 +133,8 @@ await page.waitForTimeout(300);
 ok("volver a 'Toda etapa' restaura la lista", (await rows()).length >= 3);
 
 await box.fill(`Zoraida${S}`);
+// El menú se cierra al hacer clic fuera: se vuelve a abrir si hace falta.
+if (!(await sel.isVisible())) await page.getByRole("button", { name: /^Filtrar/ }).click();
 await sel.selectOption(stage);
 await page.waitForTimeout(400);
 list = await rows();
@@ -178,7 +182,7 @@ await cSel.selectOption(empty);
 await cp.waitForTimeout(900);
 const emptyCount = (await cRows()).length;
 ok(`etapa '${empty}' sin contactos → pantalla estable (${emptyCount} filas)`,
-   emptyCount >= 0 && (await cp.getByText("Contactos").first().isVisible()));
+   emptyCount >= 0 && (await cp.getByPlaceholder(/Buscar/).first().isVisible()));
 await cp.screenshot({ path: ".tmp/e2e-contacts.png" });
 
 await browser.close();

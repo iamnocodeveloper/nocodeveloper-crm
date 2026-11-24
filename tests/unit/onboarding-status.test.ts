@@ -93,13 +93,13 @@ describe("036 — «Conecta tu agente»", () => {
   });
 
   it("sin BOT_API_KEY lo dice como problema", async () => {
-    vi.stubEnv("BRAIN_DISPATCH_URL", "http://nea:8000/vocero/dispatch");
+    vi.stubEnv("BRAIN_DISPATCH_URL", "http://nea:8000/nocodeveloper/dispatch");
     vi.stubEnv("BOT_API_KEY", "");
     expect((await paso("brain"))?.problem).toMatch(/BOT_API_KEY/);
   });
 
   it("configurado y con el /health en línea → listo; le pregunta al /health del mismo origen", async () => {
-    vi.stubEnv("BRAIN_DISPATCH_URL", "http://nea:8000/vocero/dispatch");
+    vi.stubEnv("BRAIN_DISPATCH_URL", "http://nea:8000/nocodeveloper/dispatch");
     vi.stubEnv("BOT_API_KEY", LLAVE);
     getBrainHealth.mockResolvedValue({ reachable: true, host: "nea:8000", checkedAt: "", version: "2.0.0" });
     const s = await paso("brain");
@@ -109,7 +109,7 @@ describe("036 — «Conecta tu agente»", () => {
   });
 
   it("configurado pero el /health no contesta → pendiente con el motivo", async () => {
-    vi.stubEnv("BRAIN_DISPATCH_URL", "http://nea:8000/vocero/dispatch");
+    vi.stubEnv("BRAIN_DISPATCH_URL", "http://nea:8000/nocodeveloper/dispatch");
     vi.stubEnv("BOT_API_KEY", LLAVE);
     getBrainHealth.mockResolvedValue({ reachable: false, host: "nea:8000", checkedAt: "", problem: "network" });
     const s = await paso("brain");

@@ -16,6 +16,8 @@ import type { Health } from "@/server/zernio/cuentas";
 
 /** El evento con el que llega un mensaje de un cliente. */
 export const ZERNIO_MESSAGE_EVENT = "message.received";
+/** 072 — Las reacciones del cliente llegan en su propio evento. */
+export const ZERNIO_REACTION_EVENT = "reaction.received";
 
 /** Un webhook de `GET /webhooks/settings`, en lo que a Nocodeveloper le importa. */
 export type ZernioWebhook = {
@@ -46,10 +48,10 @@ type Entry = { at: number; ok: boolean; webhooks: ZernioWebhook[] };
 
 // En globalThis porque Next recarga módulos en desarrollo; una instancia es un
 // proceso, así que la memoria alcanza. La llave nunca es la del mapa: su hash.
-const g = globalThis as unknown as { __voceroZernioWebhooks?: Map<string, Entry> };
+const g = globalThis as unknown as { __nocodeveloperZernioWebhooks?: Map<string, Entry> };
 function cache(): Map<string, Entry> {
-  if (!g.__voceroZernioWebhooks) g.__voceroZernioWebhooks = new Map();
-  return g.__voceroZernioWebhooks;
+  if (!g.__nocodeveloperZernioWebhooks) g.__nocodeveloperZernioWebhooks = new Map();
+  return g.__nocodeveloperZernioWebhooks;
 }
 const keyOf = (token: string) => createHash("sha256").update(token).digest("hex");
 
@@ -214,7 +216,11 @@ export async function ensureZernioWebhook(input: {
   const body = {
     name: previo?.name || input.name,
     url,
-    events: input.events?.length ? [...new Set(input.events)] : [ZERNIO_MESSAGE_EVENT],
+    // 072: también las reacciones del cliente (D9).
+    // 031: WhatsApp pide además sus estados y los salientes del teléfono.
+    events: [
+      ...new Set([ZERNIO_MESSAGE_EVENT, ZERNIO_REACTION_EVENT, ...(input.events ?? [])]),
+    ],
     secret: input.secret,
     isActive: true,
     accountIds: [...new Set(input.accountIds)],

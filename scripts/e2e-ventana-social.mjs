@@ -15,7 +15,7 @@
  *
  * Uso (configuración estándar de la 036, ver `scripts/lib/cerebro-falso.mjs`):
  *   1) app corriendo (`pnpm dev`) sobre una base migrada, con
- *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/vocero/dispatch,
+ *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/nocodeveloper/dispatch,
  *      CHANNELS=whatsapp,instagram,messenger,tiktok, WA_MOCK_ENABLED=true,
  *      META_GRAPH_BASE_URL → wa-mock, ZERNIO_BASE_URL → zernio-mock,
  *      OPENROUTER_BASE_URL → ai-mock con OPENROUTER_API_TOKEN y
@@ -183,7 +183,7 @@ async function main() {
   }
 
   console.log("== Setup ==");
-  const email = "e2e@vocero.test";
+  const email = "e2e@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", {
     method: "POST",

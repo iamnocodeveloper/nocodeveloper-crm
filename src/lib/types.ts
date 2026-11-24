@@ -1,5 +1,6 @@
 /** DTOs que viajan por la API interna (lado cliente). */
 
+import type { ReaccionDto } from "@/lib/reacciones";
 import type { Channel } from "@/lib/channels";
 
 export type ConversationDto = {
@@ -27,7 +28,7 @@ export type ConversationDto = {
    * 028 — Lo que el compositor puede ofrecer en este canal: adjuntos, y
    * ubicación o contacto. El servidor rechaza lo demás igual.
    */
-  composer: { media: boolean; structured: boolean };
+  composer: { media: boolean; structured: boolean; quoteReply: boolean };
   preview: string | null;
   /** 018: el anuncio que abrió la conversación, para la marca de la lista. */
   anuncio: {
@@ -36,6 +37,8 @@ export type ConversationDto = {
     /** `post` si fue una publicación y no un anuncio. */
     sourceType: string | null;
   } | null;
+  /** 070: cuándo lo fijó el usuario de la sesión; null o ausente = no fijado. */
+  pinnedAt?: string | null;
 };
 
 /** 018 — De qué anuncio llegó un contacto, como lo ve la bandeja. */
@@ -87,7 +90,31 @@ export type MessageDto = {
   /** 008 — Origen del saliente (en entrantes viene 'operator' y se ignora). */
   origin: "ai" | "operator" | "manual" | "template";
   media: MessageMediaDto | null;
+  /** 039 — Tiene id en la plataforma: se le puede responder citando. */
+  quotable: boolean;
+  /** 039 — El mensaje que cita, o null si no cita ninguno. */
+  replyTo: QuotedMessageDto | null;
+  /** 072 — Tiene id en la plataforma: se le puede reaccionar. */
+  reactable?: boolean;
+  /** 072 — Reacciones del cliente y del equipo. */
+  reactions?: ReaccionDto[];
+  /** 074 — Hora de la última edición (WhatsApp), o null si nunca se editó. */
+  editedAt?: string | null;
+  /** 074 — Lo que decía antes de la primera edición. */
+  originalText?: string | null;
   createdAt: string;
+};
+
+/**
+ * 039 — Lo que se enseña de un mensaje citado. Con `id: null` el original no
+ * está en el CRM (anterior a la instalación o de un tipo que no se guarda).
+ */
+export type QuotedMessageDto = {
+  id: string | null;
+  direction: "in" | "out" | null;
+  type: string | null;
+  text: string | null;
+  mediaKind: string | null;
 };
 
 export type TemplateDto = {

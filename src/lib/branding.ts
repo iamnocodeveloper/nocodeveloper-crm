@@ -45,26 +45,22 @@ export type Branding = {
 };
 
 export const DEFAULT_BRANDING: Branding = {
-  name: "Nocodeveloper CRM",
-  // Lima sobre obsidiana. En claro el resolvedor la oscurece para conservar
-  // contraste; en oscuro y en la barra lateral se queda en el lima brillante.
-  accent: "#C6F24E",
+  name: "Nocodeveloper",
+  // El azul eléctrico de nocodevelopercrm.com: la instancia recién instalada se ve
+  // igual que la landing. Una agencia lo cambia en Configuración → Marca.
+  accent: "#0d5bff",
   currency: DEFAULT_CURRENCY,
   favicon: null,
 };
 
 /**
- * Presets. El primero es el azul clásico del core; los demás son tonos sobrios
- * para quien prefiera un CRM más discreto. La lima de Nocodeveloper se deriva
- * con `resolveAccentSet` porque necesita tinta oscura encima.
+ * Presets. El primero es la marca Nocodeveloper (valores exactos de la landing); los
+ * demás son los tonos sobrios del handoff Atlas, que siguen disponibles para
+ * quien quiera un CRM más discreto.
  */
 export const ACCENT_PRESETS: Record<string, { label: string; set: AccentSet }> = {
-  "#c6f24e": {
-    label: "Lima Nocodeveloper",
-    set: { accent: "#77912f", hover: "#647a27", soft: "#dcebb0", tint: "#e9f3c8", text: "#4e641c", fg: "#0f1419" },
-  },
   "#0d5bff": {
-    label: "Azul eléctrico",
+    label: "Azul Nocodeveloper",
     set: { accent: "#0d5bff", hover: "#0a4de6", soft: "#d3e2ff", tint: "#ebf1ff", text: "#0038d8", fg: "#ffffff" },
   },
   "#3f5972": {
@@ -136,15 +132,15 @@ function contrast(a: Rgb, b: Rgb): number {
 }
 
 /** Fondo de referencia del tema oscuro (debe seguir a `--bg` de globals.css). */
-const DARK_BG: Rgb = { r: 0x1e, g: 0x24, b: 0x1b };
+const DARK_BG: Rgb = { r: 0x1a, g: 0x23, b: 0x20 };
 
 /**
  * Fondo de referencia de la barra lateral (debe seguir a `--bg` de `.nav-dark`).
- * La barra es obsidiana fija en los dos temas, así que su acento se calcula
+ * La barra es azul marino fijo en los dos temas, así que su acento se calcula
  * contra ella y no contra la página: si siguiera a DARK_BG, cambiar el tema
  * oscuro repintaría también la barra del tema claro.
  */
-const NAV_BG: Rgb = { r: 0x07, g: 0x08, b: 0x06 };
+const NAV_BG: Rgb = { r: 0x0b, g: 0x13, b: 0x27 };
 
 /** Tinta ENCIMA del acento: blanco solo si pasa AA (4.5:1), si no, casi negro. */
 const INK_ON_LIGHT = "#0f1419";
@@ -173,7 +169,7 @@ type DarkRecipe = { bg: Rgb; minContrast: number; soft: number; tint: number; te
 // Página oscura: con 3:1 el azul Nocodeveloper conserva la tinta blanca (4.5:1); el
 // tint más denso (0.78) hace que la fila seleccionada se vea sin leer el color
 // del texto (≥ 1.25:1 contra el fondo).
-const PAGE_DARK: DarkRecipe = { bg: DARK_BG, minContrast: 3, soft: 0.64, tint: 0.78, text: 0.34 };
+const PAGE_DARK: DarkRecipe = { bg: DARK_BG, minContrast: 3, soft: 0.56, tint: 0.72, text: 0.34 };
 // Barra lateral: la receta de siempre, para que se vea igual que antes.
 const NAV_DARK: DarkRecipe = { bg: NAV_BG, minContrast: 3.5, soft: 0.72, tint: 0.88, text: 0.28 };
 
@@ -222,8 +218,7 @@ export function resolveAccentSet(
 
   const preset = ACCENT_PRESETS[accentHex.toLowerCase()];
   if (preset) return preset.set;
-  if (!isValidHex(accentHex))
-    return ACCENT_PRESETS[DEFAULT_BRANDING.accent.toLowerCase()]!.set;
+  if (!isValidHex(accentHex)) return ACCENT_PRESETS[DEFAULT_BRANDING.accent]!.set;
 
   let base = hexToRgb(accentHex.toLowerCase());
   // contraste con blanco = (1.05) / (L + 0.05); exigir ≥ 3

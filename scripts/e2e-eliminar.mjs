@@ -12,7 +12,7 @@
  * Uso (configuración estándar de la 036, ver `scripts/lib/cerebro-falso.mjs`):
  *   1) app corriendo (`pnpm dev`) sobre una base migrada, con
  *      WA_MOCK_ENABLED=true, META_GRAPH_BASE_URL → wa-mock, BOT_API_KEY y
- *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/vocero/dispatch.
+ *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/nocodeveloper/dispatch.
  *      Con AGENDA=on corre además la cita por venir (AC6).
  *   2) node --env-file=.env.e2e-036 scripts/e2e-eliminar.mjs
  *
@@ -177,7 +177,7 @@ async function main() {
     ? await levantarCerebroFalso({ base: BASE, botKey: BOT_KEY, url: new URL(DISPATCH), responder: "ninguna" })
     : null;
 
-  const email = "e2e@vocero.test";
+  const email = "e2e@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", {
     method: "POST",
@@ -225,7 +225,7 @@ async function permisos() {
   const p = await persona(1, "permisos");
   ok("hay una conversación que cuidar", Boolean(p.conv));
 
-  const correo = `equipo-${RUN}@vocero.test`;
+  const correo = `equipo-${RUN}@nocodeveloper.test`;
   const clave = "password-equipo-123";
   const alta = await api("/api/settings/team", {
     method: "POST",
@@ -322,7 +322,7 @@ async function elHilo(cerebro) {
     ok("llegó exactamente un conversation.deleted", olvidos.length === 1, `llegaron ${olvidos.length}`);
     ok("firmado como un turno, sobre el cuerpo crudo", o?.firmaOk === true);
     ok(
-      "con x-vocero-event, con la organización y SIN id de despacho",
+      "con x-nocodeveloper-event, con la organización y SIN id de despacho",
       o?.cabeceras.evento === "conversation.deleted" && Boolean(o?.cabeceras.org) && o?.cabeceras.dispatch === null,
       JSON.stringify(o?.cabeceras)
     );

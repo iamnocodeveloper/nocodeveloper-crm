@@ -111,7 +111,7 @@ describe("importableTemplate (065, puerto de la spec 101: importar lo que ya est
             type: "BUTTONS",
             buttons: [
               { type: "QUICK_REPLY", text: "Sí" },
-              { type: "URL", url: "https://vocerocrm.com" },
+              { type: "URL", url: "https://nocodevelopercrm.com" },
             ],
           },
         ],

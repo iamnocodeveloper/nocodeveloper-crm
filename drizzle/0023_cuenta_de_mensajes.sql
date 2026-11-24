@@ -1,1 +1,0 @@
-ALTER TABLE "meta_credentials" ADD COLUMN "messaging_account_id" text;

@@ -62,7 +62,7 @@ const FIX: Record<string, string> = {
   APP_BASE_URL:
     "en .env: APP_BASE_URL=https://crm.tudominio.com (con docker compose en esta máquina: https://localhost)",
   DATABASE_URL:
-    "en .env: DATABASE_URL=postgresql://postgres:<POSTGRES_PASSWORD>@postgres:5432/vocero (docker compose) o ...@localhost:5432/vocero (docker-compose.dev.yml)",
+    "en .env: DATABASE_URL=postgresql://postgres:<POSTGRES_PASSWORD>@postgres:5432/nocodeveloper (docker compose) o ...@localhost:5432/nocodeveloper (docker-compose.dev.yml)",
   DOMAIN:
     "en .env: DOMAIN=crm.tudominio.com (o localhost para probar aquí); solo lo usa docker compose para el HTTPS de Caddy",
 };
@@ -309,7 +309,7 @@ export function describeDbError(err: unknown, url: string): CheckResult {
         status: "fail",
         label,
         detail: `la base de datos no existe (${where})`,
-        fix: "créala (CREATE DATABASE vocero) o deja que docker compose la cree con POSTGRES_DB=vocero",
+        fix: "créala (CREATE DATABASE nocodeveloper) o deja que docker compose la cree con POSTGRES_DB=nocodeveloper",
       };
     default:
       return {
@@ -554,7 +554,7 @@ export function checkDispatch(
       status: "warn",
       label,
       detail: "no es una URL http:// o https:// válida (o lleva usuario:clave): el despacho queda INACTIVO",
-      fix: "en .env: BRAIN_DISPATCH_URL=http://nea:8000/vocero/dispatch (la dirección interna de tu cerebro)",
+      fix: "en .env: BRAIN_DISPATCH_URL=http://nea:8000/nocodeveloper/dispatch (la dirección interna de tu cerebro)",
     };
   }
   if (config.problem === "sin_llave") {

@@ -35,6 +35,24 @@ const prefixes = {
   dispatch: "dsp",
   // 026 — el aviso de que una conversación se eliminó
   olvido: "olv",
+  // 047 — eventos de webhook guardados antes de procesarse
+  webhookEvent: "whe",
+  // 049 — respuestas rápidas
+  quickReply: "qr",
+  // 050 — notas internas del hilo
+  conversationNote: "nota",
+  // 069 — API pública v1, MCP y su OAuth
+  apiKey: "ak",
+  oauthClient: "vc",
+  oauthGrant: "og",
+  oauthToken: "ot",
+  // 070 — chats fijados
+  conversationPin: "pin",
+  // 072 — reacciones a mensajes
+  messageReaction: "rx",
+  // K1 — Kooni SaaS
+  saasPlan: "plan",
+  saasAudit: "aud",
 } as const;
 
 export type IdKind = keyof typeof prefixes;

@@ -188,7 +188,7 @@ function dispatchView(d: BrainDispatchDto, now: number): RowView {
     return {
       tone: "warn",
       headline: "No se puede despachar",
-      detail: `BRAIN_DISPATCH_URL no es una URL http:// o https:// válida, o lleva usuario y clave (p. ej. http://nea:8000/vocero/dispatch): corrígela y vuelve a desplegar el CRM. ${mientras}`,
+      detail: `BRAIN_DISPATCH_URL no es una URL http:// o https:// válida, o lleva usuario y clave (p. ej. http://nea:8000/nocodeveloper/dispatch): corrígela y vuelve a desplegar el CRM. ${mientras}`,
     };
   }
   if (d.problem === "sin_llave") {

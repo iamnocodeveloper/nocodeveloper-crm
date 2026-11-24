@@ -12,14 +12,14 @@ type Bucket = {
 };
 
 const globalForRl = globalThis as unknown as {
-  __voceroRateLimit?: Map<string, Bucket>;
+  __nocodeveloperRateLimit?: Map<string, Bucket>;
 };
 
 function store(): Map<string, Bucket> {
-  if (!globalForRl.__voceroRateLimit) {
-    globalForRl.__voceroRateLimit = new Map();
+  if (!globalForRl.__nocodeveloperRateLimit) {
+    globalForRl.__nocodeveloperRateLimit = new Map();
   }
-  return globalForRl.__voceroRateLimit;
+  return globalForRl.__nocodeveloperRateLimit;
 }
 
 /**

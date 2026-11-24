@@ -1,4 +1,5 @@
 /** Utilidades de presentación de la bandeja. */
+import type { MessageDto, QuotedMessageDto } from "@/lib/types";
 
 export function formatTime(iso: string | null): string {
   if (!iso) return "";
@@ -40,10 +41,49 @@ const MEDIA_LABELS: Record<string, string> = {
   location: "Ubicación",
   contacts: "Contacto compartido",
   template: "Plantilla",
+  // 074: tipos que se guardan aunque la bandeja no tenga vista propia.
+  unsupported: "Mensaje no soportado",
+  unknown: "Mensaje no soportado",
+  order: "Pedido del catálogo",
+  poll: "Encuesta",
 };
+
+/** 074 — Un mensaje que llegó pero que la bandeja no puede enseñar. */
+export const NO_SOPORTADO = "Este mensaje no se puede mostrar aquí. Revísalo desde el teléfono";
+
+/** 074 — Lo que el botón escribe en la caja de responder (no lo envía). */
+export const PEDIR_EN_TEXTO = "¿Me lo puedes mandar en texto?";
+
+/** Tipos de la vista previa que se marcan como «no se puede mostrar». */
+const SIN_VISTA_PREVIA = new Set(["unsupported", "unknown", "order", "poll"]);
 
 export function mediaLabel(type: string): string {
   return MEDIA_LABELS[type] ?? "Contenido";
+}
+
+/** Tipos que la bandeja sabe dibujar aunque lleguen sin texto. */
+const TIPOS_CON_VISTA = new Set([
+  "text",
+  "template",
+  "image",
+  "audio",
+  "video",
+  "document",
+  "sticker",
+  "location",
+  "contacts",
+  "button",
+  "interactive",
+]);
+
+/**
+ * 074 — Sin adjunto, sin texto y de un tipo que la bandeja no dibuja: la
+ * plataforma avisó que llegó algo, pero no mandó qué (o no se guardó a
+ * propósito, como una encuesta).
+ */
+export function esNoSoportado(m: Pick<MessageDto, "type" | "text" | "media">): boolean {
+  if (m.media || m.text) return false;
+  return !TIPOS_CON_VISTA.has(m.type);
 }
 
 /** 008 — Tamaño humano de un adjunto. */
@@ -72,5 +112,25 @@ export function emptyInboxDescription(labels: readonly string[]): string {
 
 export function previewText(preview: string | null): string {
   if (!preview) return "";
+  if (SIN_VISTA_PREVIA.has(preview)) return `⚠️ ${MEDIA_LABELS[preview]}`;
   return MEDIA_LABELS[preview] ? `📎 ${MEDIA_LABELS[preview]}` : preview;
+}
+
+/** 039 — La cita de un mensaje del hilo, para el compositor y la burbuja provisional. */
+export function citaDe(m: MessageDto): QuotedMessageDto {
+  return {
+    id: m.id,
+    direction: m.direction,
+    type: m.type,
+    text: m.text ?? m.media?.caption ?? null,
+    mediaKind: m.media?.kind ?? null,
+  };
+}
+
+/** 039 — El renglón de texto de una cita: su texto, el tipo de adjunto, o que no está. */
+export function textoDeCita(cita: QuotedMessageDto): string {
+  if (cita.text) return cita.text;
+  if (cita.mediaKind) return mediaLabel(cita.mediaKind);
+  if (cita.type && cita.type !== "text") return mediaLabel(cita.type);
+  return cita.id ? "Mensaje" : "Mensaje no disponible";
 }

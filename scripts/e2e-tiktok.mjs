@@ -9,7 +9,7 @@
  *
  * Uso (configuración estándar de la 036, ver `scripts/lib/cerebro-falso.mjs`):
  *   1) app corriendo (`pnpm dev`) sobre una base migrada, con
- *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/vocero/dispatch, CHANNELS que
+ *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/nocodeveloper/dispatch, CHANNELS que
  *      incluya `tiktok` (y, para el reparto por plataforma, `instagram`),
  *      WA_MOCK_ENABLED=true, ZERNIO_BASE_URL → zernio-mock,
  *      OPENROUTER_BASE_URL → ai-mock con OPENROUTER_API_TOKEN y
@@ -174,7 +174,7 @@ async function main() {
   const cerebro = await levantarCerebroFalso({ base: BASE, botKey: BOT_KEY });
 
   console.log("== Setup ==");
-  const email = "e2e@vocero.test";
+  const email = "e2e@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", {
     method: "POST",
@@ -415,6 +415,13 @@ async function limites({ conv, hilo, sender, nombre }) {
     (await enviadosPorZernio(hilo)).length === 10 &&
       !(await mensajesDe(conv.id)).some((m) => m.text === `el undécimo ${MARCA}`)
   );
+  // 068: el operador escribió desde la Bandeja y eso pausa la IA. Para probar
+  // el tope por el lado del cerebro, el dueño se la devuelve.
+  const reactivada = await api(`/api/conversations/${conv.id}`, {
+    method: "PATCH",
+    body: JSON.stringify({ reactivate: true }),
+  });
+  ok("068: el dueño reactiva la IA de la conversación", reactivada.res.ok, String(reactivada.res.status));
   if (BOT_KEY.length >= 16) {
     const porBot = await bot("/api/bot/messages", {
       method: "POST",

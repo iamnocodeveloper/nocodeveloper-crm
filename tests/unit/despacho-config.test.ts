@@ -28,12 +28,12 @@ describe("leerConfigDespacho", () => {
 
   it("URL interna + llave: activo, y es válida aunque no sea pública", () => {
     const c = leerConfigDespacho({
-      BRAIN_DISPATCH_URL: "http://nea:8000/vocero/dispatch",
+      BRAIN_DISPATCH_URL: "http://nea:8000/nocodeveloper/dispatch",
       BOT_API_KEY: LLAVE,
     });
     expect(c).toEqual({
       active: true,
-      url: "http://nea:8000/vocero/dispatch",
+      url: "http://nea:8000/nocodeveloper/dispatch",
       host: "nea:8000",
       secret: LLAVE,
     });
@@ -41,14 +41,14 @@ describe("leerConfigDespacho", () => {
 
   it("https público también", () => {
     const c = leerConfigDespacho({
-      BRAIN_DISPATCH_URL: " https://nea.ejemplo.com/vocero/dispatch ",
+      BRAIN_DISPATCH_URL: " https://nea.ejemplo.com/nocodeveloper/dispatch ",
       BOT_API_KEY: LLAVE,
     });
     expect(c.active).toBe(true);
     expect(c.host).toBe("nea.ejemplo.com");
   });
 
-  it.each(["nea:8000/vocero/dispatch", "no es una url", "ftp://nea/vocero", "file:///etc/passwd"])(
+  it.each(["nea:8000/nocodeveloper/dispatch", "no es una url", "ftp://nea/nocodeveloper", "file:///etc/passwd"])(
     "%s → problema de URL, inactivo",
     (url) => {
       const c = leerConfigDespacho({ BRAIN_DISPATCH_URL: url, BOT_API_KEY: LLAVE });
@@ -58,7 +58,7 @@ describe("leerConfigDespacho", () => {
 
   it("usuario y clave en la URL → problema de URL (el despacho ya va firmado)", () => {
     const c = leerConfigDespacho({
-      BRAIN_DISPATCH_URL: "https://user:secreto@nea.ejemplo.com/vocero/dispatch",
+      BRAIN_DISPATCH_URL: "https://user:secreto@nea.ejemplo.com/nocodeveloper/dispatch",
       BOT_API_KEY: LLAVE,
     });
     expect(c).toEqual({ active: false, host: "nea.ejemplo.com", problem: "url" });
@@ -66,10 +66,10 @@ describe("leerConfigDespacho", () => {
   });
 
   it("sin BOT_API_KEY, o corta → sin_llave, inactivo, y solo sale el host", () => {
-    const sin = leerConfigDespacho({ BRAIN_DISPATCH_URL: "http://nea:8000/vocero/dispatch?t=abc" });
+    const sin = leerConfigDespacho({ BRAIN_DISPATCH_URL: "http://nea:8000/nocodeveloper/dispatch?t=abc" });
     expect(sin).toEqual({ active: false, host: "nea:8000", problem: "sin_llave" });
     const corta = leerConfigDespacho({
-      BRAIN_DISPATCH_URL: "http://nea:8000/vocero/dispatch",
+      BRAIN_DISPATCH_URL: "http://nea:8000/nocodeveloper/dispatch",
       BOT_API_KEY: "corta",
     });
     expect(corta).toMatchObject({ active: false, problem: "sin_llave" });
@@ -78,7 +78,7 @@ describe("leerConfigDespacho", () => {
 
 describe("dispatchDto — lo que ve la tarjeta", () => {
   const activo = leerConfigDespacho({
-    BRAIN_DISPATCH_URL: "http://nea:8000/vocero/dispatch",
+    BRAIN_DISPATCH_URL: "http://nea:8000/nocodeveloper/dispatch",
     BOT_API_KEY: LLAVE,
   });
   const sinHechos = { lastDeliveredAt: null, lastFailure: null, pending: 0 };
@@ -102,7 +102,7 @@ describe("dispatchDto — lo que ve la tarjeta", () => {
       pending: 2,
     });
     expect(JSON.stringify(dto)).not.toContain(LLAVE);
-    expect(JSON.stringify(dto)).not.toContain("/vocero/dispatch");
+    expect(JSON.stringify(dto)).not.toContain("/nocodeveloper/dispatch");
   });
 
   it("mal configurado: el problema viaja y active es false", () => {
@@ -189,7 +189,7 @@ describe("pnpm doctor — la línea del despacho", () => {
 
   it("activo: ✓ con el host, sin la ruta ni la llave", () => {
     const r = checkDispatch({
-      BRAIN_DISPATCH_URL: "http://nea:8000/vocero/dispatch?t=secreto",
+      BRAIN_DISPATCH_URL: "http://nea:8000/nocodeveloper/dispatch?t=secreto",
       BOT_API_KEY: LLAVE,
     });
     expect(r.status).toBe("ok");
@@ -202,7 +202,7 @@ describe("pnpm doctor — la línea del despacho", () => {
     const url = checkDispatch({ BRAIN_DISPATCH_URL: "nea:8000", BOT_API_KEY: LLAVE });
     expect(url.status).toBe("warn");
     expect(url.fix).toContain("BRAIN_DISPATCH_URL=");
-    const llave = checkDispatch({ BRAIN_DISPATCH_URL: "http://nea:8000/vocero/dispatch" });
+    const llave = checkDispatch({ BRAIN_DISPATCH_URL: "http://nea:8000/nocodeveloper/dispatch" });
     expect(llave.status).toBe("warn");
     expect(llave.fix).toContain("BOT_API_KEY=");
   });

@@ -26,7 +26,7 @@ export default function RegisterPage() {
     if (err) {
       if (err.status === 403) {
         setError(
-          "El registro está cerrado: esta instancia ya tiene su organización. Pide acceso al propietario."
+          "El registro está cerrado. Si tu negocio ya usa la app, pide acceso al propietario."
         );
       } else if (err.status === 429) {
         setError("Demasiados intentos. Espera unos minutos.");
@@ -46,8 +46,8 @@ export default function RegisterPage() {
       <CardHeader>
         <CardTitle>Crear cuenta</CardTitle>
         <CardDescription>
-          El primer registro crea la organización de esta instancia y queda
-          como propietario.
+          Crea la cuenta de tu negocio. Quedas como propietario y puedes
+          invitar a tu equipo después.
         </CardDescription>
       </CardHeader>
       <CardContent>

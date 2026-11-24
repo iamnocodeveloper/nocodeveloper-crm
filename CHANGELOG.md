@@ -1,41 +1,32 @@
-# Changelog
+# Cambios
 
-## 1.0.0 — 2026-10-22
+## 2.0.0 — 2026-11-24
 
-Primera release pública de **Nocodeveloper CRM**: core open source, identidad
-propia y experiencia móvil/PWA.
+Nocodeveloper CRM pasa a ser una plataforma SaaS: muchos negocios en una sola
+instalación, con planes, prueba gratis y un panel de administración.
 
-### Identidad
+### Nuevo
 
-- Rebranding completo: nombre, paleta obsidiana/lima, tipografía Space Grotesk +
-  Fraunces + JetBrains Mono, login de dos paneles, iconos PWA y favicon.
-- `DEFAULT_BRANDING` y presets de acento actualizados.
-- README, docs, manifiestos y metadatos del repo rebrandeados.
+- **Modo SaaS** (`SAAS_MODE=on`): cada registro crea su propio negocio con
+  plan de prueba (`SAAS_TRIAL_DAYS`, 14 por defecto). Un negocio suspendido o
+  con la prueba vencida puede ver sus datos, pero no enviar ni cambiar nada.
+  Límite de mensajes al mes y de usuarios por plan.
+- **Panel `/admin`** para el dueño de la plataforma (`SUPERADMIN_EMAILS`):
+  resumen, negocios (plan, estado, prueba, límite propio, suspender,
+  reactivar, notas internas), usuarios, planes, integraciones y bitácora.
+- **Integraciones de la plataforma** desde el panel: WAHA (WhatsApp no
+  oficial) y Zernio (WhatsApp oficial con coexistencia). Las llaves se
+  guardan cifradas y se pueden probar con un botón.
+- **WhatsApp por Zernio** con coexistencia (`WHATSAPP_ZERNIO=on`): lo que el
+  dueño escribe desde la app del teléfono entra en la bandeja y pausa la IA.
+- **API pública v1** con llaves por negocio, su MCP y OAuth (`API_V1=on`).
+- Bandeja: reacciones, responder citando, reenviar, notas internas, chats
+  fijados, respuestas rápidas, notas de voz, mensajes editados y todos los
+  adjuntos de Instagram, Messenger y TikTok.
+- Webhooks guardados antes de procesarse: si algo falla, se reintenta solo.
+- Temas y apariencia por negocio; PWA instalable con avisos.
 
-### Móvil y PWA
+### Actualizar desde 1.0
 
-- Barra inferior con Bandeja, Pipeline, Contactos, Citas/Agente y Más.
-- Cajón lateral, safe-area y cierre al navegar.
-- Bandeja maestro-detalle y panel de detalles adaptable.
-- Hoja **+** del compositor para archivo, ubicación y contacto.
-- Diálogos convertidos en hojas inferiores en el teléfono.
-- Manifest, service worker, iconos 192/512/maskable, Apple touch y `/offline`.
-- Ajustes con tira de pestañas desplazable y Agente sin desbordes.
-
-### Core
-
-- Conserva las funciones del upstream: bandeja, pipeline, contactos, agente,
-  Laboratorio, agenda, atribución, canales opcionales y white-label.
-- Tests de versión, manifiestos, branding, contraste y navegación móvil
-  actualizados a la nueva identidad.
-
-### Alcance
-
-- No incluye los módulos privados de operación de clientes (bloqueo avanzado de
-  IA, catálogo, ventas y automatizaciones específicas).
-- La licencia MIT se conserva en `LICENSE`.
-
-### Actualizar
-
-Es la primera release pública: no hay migración desde una versión anterior de
-Nocodeveloper CRM. Si vienes del upstream, revisa `docs/migrar-a-2.0.md`.
+La numeración de migraciones cambió. Instala la 2.0 sobre una base nueva; las
+migraciones se aplican solas al arrancar.

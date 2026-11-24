@@ -80,19 +80,23 @@ function arriba(vars: Vars, a: string, b: string) {
   ).toBeGreaterThan(luminancia(hex(vars, b)));
 }
 
-describe("tema oscuro: el bicolor no desaparece", () => {
-  it("la barra es claramente más oscura que la página (≥ 1.25:1)", () => {
-    // La barra pinta `bg-subtle` DENTRO de `.nav-dark`; la página, `--bg`.
-    const barra = hex(nav, "--bg-subtle");
-    const pagina = hex(oscuro, "--bg");
-    expect(luminancia(barra)).toBeLessThan(luminancia(pagina));
-    expect(contraste(barra, pagina)).toBeGreaterThanOrEqual(1.25);
-    // …y el hueco de la página (hilo, columnas) tampoco se confunde con ella.
-    expect(contraste(barra, hex(oscuro, "--bg-subtle"))).toBeGreaterThanOrEqual(1.1);
+describe("061 — las tarjetas se despegan del marco", () => {
+  // La barra azul marino (.nav-dark) ya no es el menú: en escritorio es el riel
+  // de iconos, una tarjeta más. Lo que tiene que verse es la tarjeta contra el
+  // marco que asoma entre ellas.
+  it("en claro y en oscuro, la tarjeta y el marco no se confunden", () => {
+    piso(claro, "--bg", "--marco-2", 1.1);
+    piso(oscuro, "--bg", "--marco-2", 1.15);
+    arriba(oscuro, "--bg", "--marco-2");
   });
 
-  it("en claro la barra sigue siendo azul marino sobre blanco", () => {
-    expect(contraste(hex(nav, "--bg-subtle"), hex(claro, "--bg"))).toBeGreaterThanOrEqual(15);
+  it("el riel activo y el botón de enviar se ven y su icono se lee", () => {
+    for (const t of [claro, oscuro]) {
+      piso(t, "--riel-activo", "--bg", 3);
+      piso(t, "--riel-activo-texto", "--riel-activo", 4.5);
+      piso(t, "--enviar", "--chat-bg", 3);
+      piso(t, "--enviar-texto", "--enviar", 4.5);
+    }
   });
 });
 
@@ -135,12 +139,18 @@ describe("tema oscuro: escalera de superficies", () => {
     piso(oscuro, "--border-strong", "--bg-raised", 2);
   });
 
-  it("las burbujas se despegan del hilo", () => {
-    piso(oscuro, "--bubble-in", "--chat-bg", 1.3);
-    piso(oscuro, "--bubble-in-border", "--chat-bg", 2);
-    piso(oscuro, "--accent-tint", "--chat-bg", 1.3); // --bubble-out
-    piso(oscuro, "--text", "--bubble-in", 7);
-    piso(oscuro, "--text", "--accent-tint", 7);
+  it("las burbujas se despegan del hilo y lo de adentro se lee", () => {
+    // 061 — Cada burbuja lleva su texto, su gris (hora, cita) y sus enlaces.
+    for (const t of [claro, oscuro]) {
+      piso(t, "--bubble-in", "--chat-bg", 1.3);
+      piso(t, "--bubble-in-text", "--bubble-in", 7);
+      piso(t, "--bubble-in-muted", "--bubble-in", 4.5);
+      piso(t, "--bubble-in-link", "--bubble-in", 4.5);
+      piso(t, "--bubble-in-text", "--bubble-in-raised", 7);
+      piso(t, "--bubble-out-text", "--bubble-out", 7);
+      piso(t, "--bubble-out-muted", "--bubble-out", 4.5);
+      piso(t, "--bubble-out-border", "--chat-bg", 1.15);
+    }
   });
 });
 
@@ -217,26 +227,25 @@ describe("tema oscuro: acento", () => {
 });
 
 describe("tema claro: no cambia", () => {
-  it("lo que flota se despega del papel cálido", () => {
-    expect(claro["--bg-raised"]).toBe("#ffffff");
-    expect(contraste(hex(claro, "--bg-raised"), hex(claro, "--bg"))).toBeGreaterThan(
-      1.02
-    );
+  it("lo que flota, la tinta y el anillo del acento son los de siempre", () => {
+    expect(claro["--bg-raised"]).toBe(claro["--bg"]);
     expect(claro["--accent-ink"]).toBe("var(--accent)");
     expect(claro["--ring"]).toBe("var(--accent)");
   });
 
-  it("la barra (.nav-dark) conserva sus valores obsidiana", () => {
+  it("la barra (.nav-dark) conserva sus valores: se ve igual en los dos temas", () => {
+    // Son los que tenía cuando copiaba al tema oscuro de antes; si la barra
+    // cambia, cambia también en claro, que es el tema que al dueño le gusta.
     expect(nav).toMatchObject({
-      "--bg": "#070806",
-      "--bg-subtle": "#070806",
-      "--bg-panel": "#141A12",
-      "--bg-hover": "#1B2418",
-      "--text": "#F3F6E8",
-      "--text-2": "#B8C4AA",
-      "--text-3": "#8A977C",
-      "--border": "#2C3827",
-      "--border-strong": "#3D4C35",
+      "--bg": "#0b1327",
+      "--bg-subtle": "#070e20",
+      "--bg-panel": "#131f3d",
+      "--bg-hover": "#182750",
+      "--text": "#e8eefc",
+      "--text-2": "#a9b8dc",
+      "--text-3": "#7688b0",
+      "--border": "#263866",
+      "--border-strong": "#34498a",
       "--ring": "var(--accent)",
     });
     expect(css).toMatch(/\.nav-dark \{\s*color-scheme: dark;/);
@@ -290,7 +299,7 @@ describe("tinta sobre el acento: blanca solo si pasa AA (≥ 4.5:1)", () => {
       expect(contraste(s.text, s.tint), `${a}: tinta sobre tint`).toBeGreaterThanOrEqual(4.5);
       expect(contraste(s.text, pagina), `${a}: tinta sobre la página`).toBeGreaterThanOrEqual(4.5);
       // El tono ayuda (un rojo se distingue del azul marino aunque su
-      // luminancia se le acerque); el azul Vocero lleva su propio piso, 1.25.
+      // luminancia se le acerque); el azul Nocodeveloper lleva su propio piso, 1.25.
       expect(contraste(s.tint, pagina), `${a}: tint`).toBeGreaterThanOrEqual(1.1);
     }
   });

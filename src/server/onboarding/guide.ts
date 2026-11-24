@@ -47,7 +47,7 @@ export type Guide = {
 
 /** 036 — A dónde lleva «Conecta tu agente»: la receta del par. */
 export const GUIA_DEL_PAR =
-  "https://github.com/iamnocodeveloper/nocodeveloper-crm/blob/main/docs/migrar-a-2.0.md#el-par-crm--nea";
+  "https://github.com/iamnocodeveloper/nocodeveloper-crm/blob/main/README.md#qué-es";
 
 const ready = (s: ReadinessStep | undefined) => s?.status === "ready";
 

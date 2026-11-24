@@ -1,4 +1,5 @@
 import { mockGuard } from "@/lib/dev-guard";
+import { empaquetarOgg } from "@/lib/audio/webm-ogg";
 import { pngDePrueba } from "@/server/dev/png-de-prueba";
 
 /**
@@ -60,6 +61,55 @@ export async function GET(
       return new Response(null, { status: 503 });
     }
     return new Response(new Uint8Array(pngDePrueba(id)), {
+      headers: { "content-type": "image/png" },
+    });
+  }
+
+  // 074 — El CDN de los adjuntos de Instagram, Messenger y TikTok: la URL
+  // firmada que trae el webhook apunta aquí. `adjunto-caducado…` responde como
+  // una firma vencida (403), `adjunto-enorme…` pasa del tope de una foto y
+  // `adjunto-redirige…` salta a este mismo servidor por otro nombre
+  // (localhost ↔ 127.0.0.1): la descarga debe revalidar el salto y negarse.
+  if (id.startsWith("adjunto")) {
+    if (id.startsWith("adjunto-caducado")) return new Response(null, { status: 403 });
+    if (id.startsWith("adjunto-enorme")) {
+      return new Response(new Uint8Array(11 * 1024 * 1024), {
+        headers: { "content-type": "image/jpeg" },
+      });
+    }
+    if (id.startsWith("adjunto-redirige")) {
+      const aqui = new URL(req.url);
+      const otro = aqui.hostname === "127.0.0.1" ? "localhost" : "127.0.0.1";
+      return new Response(null, {
+        status: 302,
+        headers: {
+          location: `${aqui.protocol}//${otro}:${aqui.port}/api/dev/wa-mock/media-file/adjunto-destino-del-salto`,
+        },
+      });
+    }
+    if (id.startsWith("adjunto-pdf")) {
+      return new Response(Buffer.from("%PDF-1.4\n% adjunto de prueba\n"), {
+        headers: { "content-type": "application/pdf" },
+      });
+    }
+    return new Response(new Uint8Array(pngDePrueba(id)), {
+      headers: { "content-type": "image/png" },
+    });
+  }
+
+  // 044 — Una nota de voz de verdad (Ogg/Opus, 3 s de silencio) para que el
+  // reproductor la pueda decodificar.
+  if (id.includes("audio")) {
+    const silencio = Array.from({ length: 150 }, () => new Uint8Array([0xf8, 0xff, 0xfe]));
+    return new Response(new Uint8Array(empaquetarOgg(undefined, silencio)), {
+      headers: { "content-type": "audio/ogg; codecs=opus" },
+    });
+  }
+
+  // 045 — Una foto de verdad (grande, como las de un teléfono), para probar
+  // que el hilo se queda abajo cuando termina de cargar.
+  if (id.includes("imagen")) {
+    return new Response(new Uint8Array(pngDePrueba(id, 600)), {
       headers: { "content-type": "image/png" },
     });
   }

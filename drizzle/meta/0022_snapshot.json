@@ -1,5 +1,5 @@
 {
-  "id": "8532e6d0-d769-45aa-b62c-f4ca5215ae0d",
+  "id": "d729acc8-3ae5-4d7d-93ee-bb854478a704",
   "prevId": "fbb137f0-797b-4a77-8865-2fb7acf50d4f",
   "version": "7",
   "dialect": "postgresql",
@@ -3238,6 +3238,12 @@
           "primaryKey": false,
           "notNull": false
         },
+        "reply_to_wa_message_id": {
+          "name": "reply_to_wa_message_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
         "wa_timestamp": {
           "name": "wa_timestamp",
           "type": "timestamp",
@@ -4364,145 +4370,6 @@
       },
       "indexes": {},
       "foreignKeys": {},
-      "compositePrimaryKeys": {},
-      "uniqueConstraints": {},
-      "policies": {},
-      "checkConstraints": {},
-      "isRLSEnabled": false
-    },
-    "public.whatsapp_zernio_credentials": {
-      "name": "whatsapp_zernio_credentials",
-      "schema": "",
-      "columns": {
-        "id": {
-          "name": "id",
-          "type": "text",
-          "primaryKey": true,
-          "notNull": true
-        },
-        "organization_id": {
-          "name": "organization_id",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "account_ref": {
-          "name": "account_ref",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "display_phone_number": {
-          "name": "display_phone_number",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "token_cipher": {
-          "name": "token_cipher",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "token_iv": {
-          "name": "token_iv",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "token_tag": {
-          "name": "token_tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "webhook_secret_cipher": {
-          "name": "webhook_secret_cipher",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "webhook_secret_iv": {
-          "name": "webhook_secret_iv",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "webhook_secret_tag": {
-          "name": "webhook_secret_tag",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": false
-        },
-        "status": {
-          "name": "status",
-          "type": "text",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "'connected'"
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        },
-        "updated_at": {
-          "name": "updated_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true,
-          "default": "now()"
-        }
-      },
-      "indexes": {
-        "whatsapp_zernio_credentials_org_uq": {
-          "name": "whatsapp_zernio_credentials_org_uq",
-          "columns": [
-            {
-              "expression": "organization_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
-        "whatsapp_zernio_credentials_account_ref_uq": {
-          "name": "whatsapp_zernio_credentials_account_ref_uq",
-          "columns": [
-            {
-              "expression": "account_ref",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        }
-      },
-      "foreignKeys": {
-        "whatsapp_zernio_credentials_organization_id_organization_id_fk": {
-          "name": "whatsapp_zernio_credentials_organization_id_organization_id_fk",
-          "tableFrom": "whatsapp_zernio_credentials",
-          "tableTo": "organization",
-          "columnsFrom": [
-            "organization_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
-          "onDelete": "cascade",
-          "onUpdate": "no action"
-        }
-      },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {},
       "policies": {},

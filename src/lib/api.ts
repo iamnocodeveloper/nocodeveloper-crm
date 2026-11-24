@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { requireSession, UnauthorizedError, type SessionContext } from "@/lib/auth/session";
+import { tenantGate } from "@/server/saas/tenant";
 
 /** Respuesta de error estándar de la API interna (contrato api.md). */
 export function apiError(
@@ -26,6 +27,13 @@ export function withAuth<Args extends unknown[]>(
         return apiError(401, "unauthorized", "No autenticado");
       }
       throw err;
+    }
+    // K1 — Negocio suspendido o con la prueba vencida: puede MIRAR (GET) pero
+    // no cambiar nada ni enviar. Fuera del modo SaaS no bloquea nunca.
+    const req = args[0];
+    if (req instanceof Request && req.method !== "GET" && req.method !== "HEAD") {
+      const gate = await tenantGate(session.organizationId);
+      if (gate.blocked) return apiError(402, gate.code, gate.message);
     }
     try {
       return await handler(session, ...args);

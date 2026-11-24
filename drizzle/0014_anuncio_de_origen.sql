@@ -7,7 +7,7 @@
 -- Las filas que ya existen quedan sin imagen; la app la repara al abrir el
 -- contacto con la URL que ya guarda su raw, mientras Meta no la caduque.
 --
--- Mismos nombres de columna, clave foranea e indice que la 0023 de Vocero
+-- Mismos nombres de columna, clave foranea e indice que la 0023 de Nocodeveloper
 -- Cloud (spec 212): los dos repos comparten la forma de la tabla.
 
 ALTER TABLE "ad_attribution" ADD COLUMN IF NOT EXISTS "image_asset_id" text;--> statement-breakpoint

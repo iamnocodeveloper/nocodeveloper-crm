@@ -7,7 +7,7 @@ Precondición: app corriendo (`next dev`) sobre una base migrada, con mocks
 (`WA_MOCK_ENABLED=true`, `META_GRAPH_BASE_URL` → wa-mock, `OPENROUTER_BASE_URL`
 → ai-mock con `OPENROUTER_API_TOKEN` y `OPENROUTER_MODEL`), `BOT_API_KEY`
 (≥16), `AGENT_COALESCE_MS=1500` y
-`BRAIN_DISPATCH_URL=http://127.0.0.1:<puerto libre>/vocero/dispatch`. Para los
+`BRAIN_DISPATCH_URL=http://127.0.0.1:<puerto libre>/nocodeveloper/dispatch`. Para los
 otros canales, `CHANNELS=whatsapp,instagram,messenger` y `ZERNIO_BASE_URL` →
 zernio-mock.
 
@@ -39,9 +39,9 @@ corridas, cada una con la app arrancada en su modo.
 ## Historia 1 — Un mensaje llega al cerebro
 
 4. **AC1** Un WhatsApp entrante aparece en la bandeja y, pasada la ventana, el
-   cerebro recibe **un** `POST`: firma `x-vocero-signature` válida sobre el
-   cuerpo crudo con `BOT_API_KEY`; cabeceras `x-vocero-dispatch-id` (igual al
-   `dispatchId`, `dsp_…`) y `x-vocero-organization`; sin `x-vocero-event`; las
+   cerebro recibe **un** `POST`: firma `x-nocodeveloper-signature` válida sobre el
+   cuerpo crudo con `BOT_API_KEY`; cabeceras `x-nocodeveloper-dispatch-id` (igual al
+   `dispatchId`, `dsp_…`) y `x-nocodeveloper-organization`; sin `x-nocodeveloper-event`; las
    claves del evento en el orden del contrato; `conversation.id` es la de la
    bandeja, `channel = whatsapp`, ventana abierta; un mensaje de texto sin
    adjunto. El cuerpo no lleva el token de WhatsApp ni la llave.
@@ -73,8 +73,14 @@ corridas, cada una con la app arrancada en su modo.
   desde la bandeja (`POST /api/conversations/{id}/messages`). El cerebro no
   recibe **nada**: ni ese mensaje ni un despacho vacío.
 - **025·AC5** `dispatch.pending = 0`, `dispatch.lastFailure` no cambió y la
-  conversación no pasó a un humano. El siguiente mensaje de ese cliente sí se
-  despacha, y el evento trae solo ese.
+  conversación no pasó a un humano por `error`.
+- **068·AC1** La conversación queda en pausa con `manual_reply`: contestó una
+  persona.
+- **068·AC2** El cliente vuelve a escribir: el mensaje entra a la bandeja y el
+  cerebro no recibe nada.
+- **068·AC3** El dueño reactiva la IA (`PATCH {reactivate:true}`) y el cliente
+  escribe otra vez: el despacho trae los dos que nadie contestó y no repite el
+  que contestó la persona.
 
 Los dos casos dependen de ganarle a la ventana de agrupado. Si el guion pierde
 esa carrera (máquina cargada), lo reintenta con otro contacto, hasta tres
@@ -168,6 +174,6 @@ configurada: no importa, el CRM no contesta solo).
   el agente responde 409 `sin_cerebro`.
 - **La tarjeta.** En la pantalla Agente, la fila «Despacho al cerebro» dice
   «Activo · host» con la última entrega; tras un turno que no llegó, pasa a
-  ámbar con el motivo. Sin cerebro, la tarjeta dice que Vocero funciona como
+  ámbar con el motivo. Sin cerebro, la tarjeta dice que Nocodeveloper funciona como
   bandeja manual (informativo, no rojo); con cerebro y el interruptor
   apagado, que nadie está contestando.

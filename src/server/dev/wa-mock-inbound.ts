@@ -44,6 +44,8 @@ type MockMediaInput = {
  * para poder probar `button_reply`, `list_reply` y las formas rotas.
  */
 type MockButtonInput = {
+  /** 072 — reacción del cliente: el wamid al que reacciona y el emoji ("" = quitar). */
+  reaction?: { messageId: string; emoji: string };
   button?: { text: string; payload?: string };
   interactive?: Record<string, unknown>;
 };
@@ -57,6 +59,11 @@ function applyMockContent(
 ): void {
   if (type === "text") {
     message.text = { body: input.text ?? "hola" };
+  } else if (type === "reaction") {
+    message.reaction = {
+      message_id: input.reaction?.messageId ?? "wamid.mock.desconocido",
+      emoji: input.reaction?.emoji ?? "",
+    };
   } else if (type === "button") {
     // Como lo manda Meta: `context` apunta a la plantilla que traía el botón.
     const text = input.button?.text ?? input.text ?? "Sí";
@@ -117,6 +124,14 @@ export function buildInboundPayload(input: {
   text?: string;
   waMessageId?: string;
   timestamp?: number;
+  /** 039 — `wamid` del mensaje que el cliente cita (va en `context.id`). */
+  replyTo?: string;
+  /**
+   * 074 — Campos crudos del mensaje tal cual los mandaría Meta (`edit`,
+   * `errors` de un `unsupported`, el cuerpo de una encuesta…). Se mezclan al
+   * final, encima de lo demás.
+   */
+  extra?: Record<string, unknown>;
 } & MockMediaInput &
   MockReferralInput &
   MockButtonInput) {
@@ -129,6 +144,8 @@ export function buildInboundPayload(input: {
   if (input.from) message.from = input.from;
   if (input.fromUserId) message.from_user_id = input.fromUserId;
   applyMockContent(message, type, input);
+  if (input.replyTo) message.context = { from: input.from, id: input.replyTo };
+  if (input.extra) Object.assign(message, input.extra);
 
   // 016 — El referral solo viaja cuando la conversación nació de un anuncio, y
   // normalmente solo en el primer mensaje. Se arma igual que el real para que
@@ -203,6 +220,8 @@ export function buildEchoPayload(input: {
   timestamp?: number;
   /** Variante defensiva: entregar bajo la clave `messages` en vez de `message_echoes`. */
   useMessagesKey?: boolean;
+  /** 074 — Campos crudos del eco (`edit`…), tal cual los mandaría Meta. */
+  extra?: Record<string, unknown>;
 } & MockMediaInput) {
   const type = input.type ?? "text";
   const message: Record<string, unknown> = {
@@ -213,6 +232,7 @@ export function buildEchoPayload(input: {
     to: input.to,
   };
   applyMockContent(message, type, input);
+  if (input.extra) Object.assign(message, input.extra);
 
   return {
     object: "whatsapp_business_account",

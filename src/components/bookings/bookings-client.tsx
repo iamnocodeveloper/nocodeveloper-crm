@@ -46,9 +46,9 @@ import { TimeGrid } from "./time-grid";
  */
 
 /** Preferencias de quien mira, en su navegador: no son datos del negocio. */
-const VIEW_KEY = "vocero:citas:vista";
-const CANCELLED_KEY = "vocero:citas:canceladas";
-const TESTS_KEY = "vocero:citas:pruebas";
+const VIEW_KEY = "nocodeveloper:citas:vista";
+const CANCELLED_KEY = "nocodeveloper:citas:canceladas";
+const TESTS_KEY = "nocodeveloper:citas:pruebas";
 
 /** Una ráfaga de eventos SSE (una cita y su enlace) se paga con UNA consulta. */
 const SSE_COALESCE_MS = 250;

@@ -14,6 +14,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { EmbeddedSignup } from "./embedded-signup";
+import { EntregasCard } from "./entregas-card";
 
 type Connection = {
   wabaId: string;
@@ -158,6 +159,9 @@ export function WhatsappWizard() {
           }
         />
       )}
+
+      {/* 047 — Lo que llegó y no pudo entrar a la bandeja. */}
+      {connection && <EntregasCard />}
     </div>
   );
 }

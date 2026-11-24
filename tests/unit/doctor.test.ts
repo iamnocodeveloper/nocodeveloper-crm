@@ -37,7 +37,7 @@ const EJEMPLO = readFileSync(path.join(RAIZ, ".env.example"), "utf8");
 
 const VALIDO = {
   APP_BASE_URL: "https://localhost",
-  DATABASE_URL: "postgresql://postgres:pw-secreta-xyz@postgres:5432/vocero",
+  DATABASE_URL: "postgresql://postgres:pw-secreta-xyz@postgres:5432/nocodeveloper",
   BETTER_AUTH_SECRET: "secreto-de-sesiones-" + "s".repeat(24),
   ENCRYPTION_KEY: Buffer.alloc(32, 7).toString("base64"),
   META_WEBHOOK_VERIFY_TOKEN: "token-verificacion-" + "t".repeat(45),
@@ -125,7 +125,7 @@ describe("evaluateEnv", () => {
     expect(texto).not.toContain(VALIDO.BETTER_AUTH_SECRET);
     expect(texto).not.toContain(VALIDO.ENCRYPTION_KEY);
     expect(texto).not.toContain(VALIDO.META_WEBHOOK_VERIFY_TOKEN);
-    expect(texto).toContain("postgresql://postgres:***@postgres:5432/vocero");
+    expect(texto).toContain("postgresql://postgres:***@postgres:5432/nocodeveloper");
     expect(texto).toContain("definida (44 caracteres)");
 
     const roto = salida(
@@ -188,7 +188,7 @@ describe("checkDatabase", () => {
   it("otro host sin resolver sí es ✗", () => {
     const r = describeDbError(
       Object.assign(new Error("ENOTFOUND"), { code: "ENOTFOUND" }),
-      "postgresql://postgres:x@bd.interna:5432/vocero"
+      "postgresql://postgres:x@bd.interna:5432/nocodeveloper"
     );
     expect(r.status).toBe("fail");
   });
@@ -205,7 +205,7 @@ describe("checkDatabase", () => {
 describe("checkMediaDir", () => {
   let tmp: string;
   beforeEach(async () => {
-    tmp = await mkdtemp(path.join(os.tmpdir(), "vocero-doctor-media-"));
+    tmp = await mkdtemp(path.join(os.tmpdir(), "nocodeveloper-doctor-media-"));
   });
   afterEach(async () => {
     await rm(tmp, { recursive: true, force: true });

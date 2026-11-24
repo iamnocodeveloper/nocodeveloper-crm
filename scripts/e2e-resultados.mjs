@@ -22,7 +22,7 @@
  *   node --env-file=.env.e2e-036 scripts/e2e-resultados.mjs
  * Requiere: app viva con los mocks (WA_MOCK_ENABLED=true, META_GRAPH_BASE_URL →
  * wa-mock, OPENROUTER_BASE_URL → ai-mock), BOT_API_KEY,
- * BRAIN_DISPATCH_URL=http://127.0.0.1:3261/vocero/dispatch y la BD migrada.
+ * BRAIN_DISPATCH_URL=http://127.0.0.1:3261/nocodeveloper/dispatch y la BD migrada.
  * Corre con AGENDA apagada o encendida: lo lee del mismo entorno que la app.
  */
 import postgres from "postgres";
@@ -154,7 +154,7 @@ const anuncio = (f, r) => f.ads.ads.find((a) => a.sourceId === r.source_id);
 
 async function main() {
   console.log(`== Setup (AGENDA ${AGENDA ? "encendida" : "apagada"}) ==`);
-  const email = "e2e@vocero.test";
+  const email = "e2e@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", {
     method: "POST",

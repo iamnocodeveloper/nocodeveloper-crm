@@ -27,7 +27,7 @@ describe("normalizeMx (simétrica ingest/envío)", () => {
 
 describe("resolveIdentity: teléfono presente", () => {
   const contacts: WebhookValue["contacts"] = [
-    { wa_id: "5215550001234", profile: { name: "Kevin" } },
+    { wa_id: "5215550001234", profile: { name: "Ana" } },
   ];
 
   it("usa el teléfono NORMALIZADO como identidad", () => {
@@ -35,7 +35,7 @@ describe("resolveIdentity: teléfono presente", () => {
     expect(r).not.toBeNull();
     expect(r!.identity).toBe("525550001234");
     expect(r!.phone).toBe("525550001234");
-    expect(r!.profileName).toBe("Kevin");
+    expect(r!.profileName).toBe("Ana");
   });
 
   it("521 y 52 resuelven a la MISMA identidad (dedup del bug MX)", () => {
@@ -46,7 +46,7 @@ describe("resolveIdentity: teléfono presente", () => {
 
   it("captura el BSUID si además viene user_id", () => {
     const r = resolveIdentity(msg({ from: "5215550001234" }), [
-      { wa_id: "5215550001234", user_id: "bsu_777", profile: { name: "Kevin" } },
+      { wa_id: "5215550001234", user_id: "bsu_777", profile: { name: "Ana" } },
     ]);
     expect(r!.waUserId).toBe("bsu_777");
     expect(r!.identity).toBe("525550001234"); // el teléfono manda si existe

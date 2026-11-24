@@ -78,7 +78,7 @@ type ProbeCacheEntry = {
 // módulos pueden evaluarse más de una vez (una por ruta en dev), y el sondeo
 // del arranque tiene que servirle a /api/health.
 const globalForMedia = globalThis as unknown as {
-  __voceroMediaDirProbe?: ProbeCacheEntry;
+  __nocodeveloperMediaDirProbe?: ProbeCacheEntry;
 };
 
 /**
@@ -101,12 +101,12 @@ export async function mediaDirStatus(
   } catch {
     return null;
   }
-  const cached = globalForMedia.__voceroMediaDirProbe;
+  const cached = globalForMedia.__nocodeveloperMediaDirProbe;
   if (cached && cached.dir === clave && cached.expiresAt > now) {
     return cached.pending;
   }
   const pending = probeAlmacen(dir);
-  globalForMedia.__voceroMediaDirProbe = {
+  globalForMedia.__nocodeveloperMediaDirProbe = {
     dir: clave,
     expiresAt: now + MEDIA_DIR_PROBE_TTL_MS,
     pending,
@@ -116,5 +116,5 @@ export async function mediaDirStatus(
 
 /** Solo para tests. */
 export function resetMediaDirCache(): void {
-  delete globalForMedia.__voceroMediaDirProbe;
+  delete globalForMedia.__nocodeveloperMediaDirProbe;
 }

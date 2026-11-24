@@ -53,7 +53,7 @@ describe("la etiqueta bajo el logo (D6)", () => {
 
 describe("las iniciales del avatar ignoran los emojis (D7)", () => {
   it("nombres de redes con emojis", () => {
-    expect(initials("Kevin Belier 🐏")).toBe("KB");
+    expect(initials("Ana Torres 🐏")).toBe("AT");
     expect(initials("Vivir con virtud ⚖️ 🌿")).toBe("VV");
     expect(initials("🌿 Ana")).toBe("A");
     expect(initials("🐏")).toBe("?");

@@ -221,7 +221,7 @@ async function main() {
   }
 
   console.log("== Setup ==");
-  const email = "e2e@vocero.test";
+  const email = "e2e@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", {
     method: "POST",
@@ -395,7 +395,7 @@ async function resolverLaCuenta() {
 
 async function soloElPropietario() {
   console.log("\n== D7: solo el propietario conecta ==");
-  const correo = `equipo-${RUN}@vocero.test`;
+  const correo = `equipo-${RUN}@nocodeveloper.test`;
   const clave = "password-equipo-123";
   const alta = await api("/api/settings/team", {
     method: "POST",
@@ -458,10 +458,10 @@ async function elWebhook() {
   let aqui = await webhooksAqui();
   const w = aqui[0];
   ok(
-    "Zernio tiene UN webhook hacia esta instancia: activo, con message.received y solo las cuentas conectadas",
+    "Zernio tiene UN webhook hacia esta instancia: activo, con message.received y reaction.received (072) y solo las cuentas conectadas",
     aqui.length === 1 &&
       w.isActive === true &&
-      JSON.stringify(w.events) === '["message.received"]' &&
+      JSON.stringify(w.events) === '["message.received","reaction.received"]' &&
       w.accountIds.includes(IG) &&
       mismas(w.accountIds, await cuentasConectadas()) &&
       w.url === `${BASE}/api/webhooks/ig/${VERIFY_TOKEN}`,

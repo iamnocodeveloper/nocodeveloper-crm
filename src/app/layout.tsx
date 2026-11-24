@@ -1,41 +1,62 @@
 import type { Metadata, Viewport } from "next";
-import { cookies } from "next/headers";
 import localFont from "next/font/local";
 import { accentCssVariables, DEFAULT_BRANDING } from "@/lib/branding";
 import { faviconHref } from "@/lib/favicon";
-import { normalizeThemePreference, THEME_COOKIE } from "@/lib/theme";
+import { appIconHref, NAV_INK, shortAppName } from "@/lib/pwa";
+import { RegistrarServiceWorker } from "@/components/pwa";
+import { atributosHtml, cssDePropio, cssDeTemas } from "@/lib/temas";
+import { aparienciaActual } from "@/server/apariencia";
 import { getBranding } from "@/server/branding";
 import { enabledChannels } from "@/server/channels/enabled";
 import { productName } from "@/lib/channels";
-import { PwaRegister } from "@/components/pwa-register";
 import "./globals.css";
 
-// Las tres voces de Nocodeveloper, dentro del repo (`./fonts`, subconjunto
-// latino, licencia OFL en `fonts/licencias/`). Antes next/font las bajaba de
-// Google en cada BUILD y un hipo de esa red tumbaba el despliegue (mismo
-// arreglo que Vocero 2.6.1); así ni el build ni el runtime salen a internet.
-const spaceGrotesk = localFont({
-  src: "./fonts/space-grotesk-latin-wght-normal.woff2",
-  weight: "300 700",
-  variable: "--font-sans",
+// Las voces de la marca, dentro del repo (`./fonts`, subconjunto latino de
+// Google Fonts, licencia OFL en `fonts/licencias/`). Antes next/font las
+// bajaba de Google en cada BUILD y un hipo de esa red tumbaba el build; así
+// el build no sale a internet y el runtime tampoco (soberanía). 061 — La
+// interfaz va en Urbanist (geométrica y ligera, como la referencia del diseño
+// de tarjetas); Archivo, la de nocodevelopercrm.com, queda cargada para elegirla
+// (062). `--font-sans` se arma en globals.css a partir de estas.
+const urbanist = localFont({
+  src: "./fonts/urbanist-latin-variable.woff2",
+  weight: "100 900",
+  variable: "--font-urbanist",
   display: "swap",
 });
-const fraunces = localFont({
+const archivo = localFont({
+  src: "./fonts/archivo-latin-variable.woff2",
+  weight: "100 900",
+  variable: "--font-archivo",
+  display: "swap",
+});
+// 062 — Las otras dos letras que se eligen en Ajustes → Apariencia.
+const inter = localFont({
+  src: "./fonts/inter-latin-variable.woff2",
+  weight: "100 900",
+  variable: "--font-inter",
+  display: "swap",
+});
+const plexSans = localFont({
+  src: "./fonts/ibm-plex-sans-latin-variable.woff2",
+  weight: "400 700",
+  variable: "--font-plex-sans",
+  display: "swap",
+});
+const instrumentSerif = localFont({
   src: [
-    { path: "./fonts/fraunces-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/fraunces-latin-400-italic.woff2", weight: "400", style: "italic" },
-    { path: "./fonts/fraunces-latin-600-normal.woff2", weight: "600", style: "normal" },
-    { path: "./fonts/fraunces-latin-600-italic.woff2", weight: "600", style: "italic" },
+    { path: "./fonts/instrument-serif-latin-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/instrument-serif-latin-400-italic.woff2", weight: "400", style: "italic" },
   ],
   variable: "--font-serif",
   display: "swap",
   adjustFontFallback: "Times New Roman",
 });
-const jetbrainsMono = localFont({
+const plexMono = localFont({
   src: [
-    { path: "./fonts/jetbrains-mono-latin-400-normal.woff2", weight: "400", style: "normal" },
-    { path: "./fonts/jetbrains-mono-latin-500-normal.woff2", weight: "500", style: "normal" },
-    { path: "./fonts/jetbrains-mono-latin-600-normal.woff2", weight: "600", style: "normal" },
+    { path: "./fonts/ibm-plex-mono-latin-400.woff2", weight: "400", style: "normal" },
+    { path: "./fonts/ibm-plex-mono-latin-500.woff2", weight: "500", style: "normal" },
+    { path: "./fonts/ibm-plex-mono-latin-600.woff2", weight: "600", style: "normal" },
   ],
   variable: "--font-mono",
   display: "swap",
@@ -44,69 +65,59 @@ const jetbrainsMono = localFont({
 
 export const dynamic = "force-dynamic";
 
-/**
- * `viewport-fit=cover` + las franjas `env(safe-area-inset-*)` son lo que hace
- * que la PWA instalada no meta la barra superior bajo la muesca ni el menú
- * inferior bajo el gesto de inicio del iPhone.
- */
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-  viewportFit: "cover",
-  themeColor: "#0A0C0A",
-};
-
 export async function generateMetadata(): Promise<Metadata> {
   const branding = await getBranding().catch(() => DEFAULT_BRANDING);
   const producto = productName([...enabledChannels()]);
   return {
     title: `${branding.name} — ${producto}`,
     description: `${producto} con agente de IA y Laboratorio de auto-evaluación`,
-    applicationName: branding.name,
-    manifest: "/manifest.webmanifest",
-    appleWebApp: {
-      capable: true,
-      title: branding.name,
-      statusBarStyle: "black-translucent",
-    },
-    formatDetection: { telephone: false },
     // El `?v=` cambia con la marca: los navegadores guardan el favicon con una
     // insistencia notable y, sin eso, el logo nuevo tarda días en aparecer.
     icons: {
       icon: faviconHref(branding),
-      apple: "/apple-touch-icon.png",
-      shortcut: "/pwa-192.png",
+      // 048 — El icono de «Agregar a inicio» del iPhone: PNG de 180, a sangre.
+      apple: appIconHref(branding, 180),
     },
+    // 048 — Instalada desde Safari, abre sin la barra del navegador. Barra de
+    // estado negra y no translúcida: la página no tiene margen para el notch.
+    appleWebApp: { capable: true, title: shortAppName(branding.name), statusBarStyle: "black" },
   };
 }
+
+/** 048 — La barra de estado de la app instalada, del color de la barra lateral. */
+export const viewport: Viewport = { themeColor: NAV_INK };
 
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   const branding = await getBranding().catch(() => DEFAULT_BRANDING);
-  const theme = normalizeThemePreference(
-    (await cookies()).get(THEME_COOKIE)?.value
-  );
+  // 062 · D6 — La apariencia (tema, letra, tamaño y densidad) se resuelve en
+  // el servidor: el primer pintado ya la trae, sin parpadeo.
+  const { apariencia } = await aparienciaActual().catch(() => ({
+    apariencia: { tema: "menta", letra: "urbanist", tamano: "normal", densidad: "normal" } as const,
+  }));
   return (
     <html
       lang="es"
-      className={`${spaceGrotesk.variable} ${fraunces.variable} ${jetbrainsMono.variable}`}
-      // La preferencia siempre es explícita: el tema viaja resuelto en el HTML
-      // del servidor, así que no hay divergencia con el cliente ni parpadeo.
-      data-theme={theme}
+      className={`${urbanist.variable} ${archivo.variable} ${inter.variable} ${plexSans.variable} ${instrumentSerif.variable} ${plexMono.variable}`}
+      // La preferencia siempre es explícita: viaja resuelta en el HTML del
+      // servidor, así que no hay divergencia con el cliente ni parpadeo.
+      {...atributosHtml(apariencia)}
     >
       <head>
-        {/* iOS anterior a 16.4 no lee `display: standalone` del manifest: sin
-            este meta, «Añadir a pantalla de inicio» abre con barra de Safari. */}
-        <meta name="apple-mobile-web-app-capable" content="yes" />
         {/* Acento white-label inyectado en SSR: sin flash de tema */}
         <style
           dangerouslySetInnerHTML={{ __html: accentCssVariables(branding.accent) }}
         />
+        {/* 062 — Los temas listos (todos, para cambiar en vivo) y el propio. */}
+        <style
+          id="nocodeveloper-temas"
+          dangerouslySetInnerHTML={{ __html: cssDeTemas() + cssDePropio(apariencia) }}
+        />
       </head>
       <body className="font-sans">
         {children}
-        <PwaRegister />
+        <RegistrarServiceWorker />
       </body>
     </html>
   );

@@ -5,13 +5,28 @@ import { useSearchParams } from "next/navigation";
 import { ChevronLeft, PanelRight } from "lucide-react";
 import { cn, formatPhone } from "@/lib/utils";
 import { ContactAvatar } from "@/components/avatar";
-import type { ConversationDto, MessageDto } from "@/lib/types";
+import type { NotaDto } from "@/lib/notas";
+import type { EventoHiloDto } from "@/lib/eventos-hilo";
+import type {
+  ConversationDto,
+  MessageDto,
+  QuotedMessageDto,
+} from "@/lib/types";
 import { CHANNEL_LABEL, type Channel } from "@/lib/channels";
+import { canalReacciona, MOTIVO_VENTANA_CERRADA, type ReaccionDto } from "@/lib/reacciones";
 import { ChannelBadge } from "@/components/channel-badge";
 import { useEvents } from "@/components/use-events";
 import { ConversationList } from "./conversation-list";
+import { useFijar } from "./use-fijar";
+import { PinHeaderButton } from "./pin-toggle";
 import { MessageThread } from "./message-thread";
 import { Composer } from "./composer";
+import {
+  EVENTO_ABRIR_CONVERSACION,
+  setConversacionAbierta,
+} from "@/components/avisos-de-mensajes";
+import { citaDe, PEDIR_EN_TEXTO } from "./helpers";
+import { marcarBandejaMontada, publicarLista, unaALaVez } from "@/lib/lista-compartida";
 import { ContactPanel } from "./contact-panel";
 
 /**
@@ -23,6 +38,8 @@ type PendingOut = {
   id: string;
   conversationId: string;
   text: string;
+  /** 039: la cita viaja también en la burbuja provisional. */
+  replyTo: QuotedMessageDto | null;
   createdAt: string;
 };
 
@@ -49,7 +66,19 @@ export function InboxClient({
   );
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [messages, setMessages] = useState<MessageDto[]>([]);
+  // 050 — Las notas internas de la conversación abierta.
+  const [notas, setNotas] = useState<NotaDto[]>([]);
+  // 054 — Cambios de etapa y traspaso, para pintarlos en el hilo.
+  const [eventos, setEventos] = useState<EventoHiloDto[]>([]);
   const [pending, setPending] = useState<PendingOut[]>([]);
+  // 039: el mensaje al que se está respondiendo citando.
+  const [replyTo, setReplyTo] = useState<MessageDto | null>(null);
+  // 074: texto sugerido para la caja (pedir en texto un mensaje no soportado).
+  const [draft, setDraft] = useState<{
+    conversationId: string;
+    text: string;
+    nonce: number;
+  } | null>(null);
   // Arranca cerrado: en pantallas angostas el panel de detalles es un cajón
   // ENCIMA del hilo, así que abrirlo por defecto taparía la conversación. El
   // efecto de abajo lo abre solo si de veras hay tres columnas de ancho.
@@ -60,18 +89,23 @@ export function InboxClient({
 
   useEffect(() => {
     if (!isWideEnoughForPanel()) return;
-    setPanelOpen(localStorage.getItem("vocero.panelOpen") !== "false");
+    setPanelOpen(localStorage.getItem("nocodeveloper.panelOpen") !== "false");
   }, []);
   const togglePanel = useCallback((open: boolean) => {
     setPanelOpen(open);
     // La preferencia es de escritorio: abrir el cajón en el teléfono no debe
     // reescribir cómo queda la Bandeja en la computadora.
     if (isWideEnoughForPanel()) {
-      localStorage.setItem("vocero.panelOpen", String(open));
+      localStorage.setItem("nocodeveloper.panelOpen", String(open));
     }
   }, []);
   const selectedIdRef = useRef<string | null>(null);
   selectedIdRef.current = selectedId;
+  // 045 — El aviso sonoro no suena por la conversación que ya estás mirando.
+  useEffect(() => {
+    setConversacionAbierta(selectedId);
+    return () => setConversacionAbierta(null);
+  }, [selectedId]);
   const lastFetchRef = useRef<string | null>(null);
   const tmpSeq = useRef(0);
   // Los envíos salen en fila: el compositor ya no espera, pero WhatsApp debe
@@ -85,7 +119,16 @@ export function InboxClient({
     const data = (await res.json()) as { conversations: ConversationDto[] };
     setConversations(data.conversations);
     lastFetchRef.current = new Date().toISOString();
+    // 064 — El menú y Ctrl+K toman la lista de aquí en vez de pedir otra.
+    publicarLista(data.conversations);
   }, []);
+  // 070 — Chats fijados (de cada usuario).
+  const fijar = useFijar(conversations, setConversations, refetchConversations);
+
+  // 064 — Los eventos en vivo recargan la lista juntos: una ráfaga de
+  // mensajes es una petición, no una por evento, y nunca dos a la vez.
+  const refetchJunta = useMemo(() => unaALaVez(refetchConversations), [refetchConversations]);
+  useEffect(() => marcarBandejaMontada(), []);
 
   const refetchMessages = useCallback(async (conversationId: string) => {
     const res = await fetch(
@@ -96,6 +139,20 @@ export function InboxClient({
     if (selectedIdRef.current === conversationId) setMessages(data.messages);
   }, []);
 
+  const refetchNotas = useCallback(async (conversationId: string) => {
+    const res = await fetch(`/api/conversations/${conversationId}/notes`).catch(() => null);
+    if (!res?.ok) return;
+    const data = (await res.json()) as { notas: NotaDto[] };
+    if (selectedIdRef.current === conversationId) setNotas(data.notas);
+  }, []);
+
+  const refetchEventos = useCallback(async (conversationId: string) => {
+    const res = await fetch(`/api/conversations/${conversationId}/eventos`).catch(() => null);
+    if (!res?.ok) return;
+    const data = (await res.json()) as { eventos: EventoHiloDto[] };
+    if (selectedIdRef.current === conversationId) setEventos(data.eventos);
+  }, []);
+
   useEffect(() => {
     void refetchConversations();
   }, [refetchConversations]);
@@ -104,14 +161,19 @@ export function InboxClient({
     (id: string) => {
       setSelectedId(id);
       setMessages([]);
+      setNotas([]);
+      setEventos([]);
+      setReplyTo(null);
       void refetchMessages(id);
+      void refetchNotas(id);
+      void refetchEventos(id);
       void fetch(`/api/conversations/${id}`, {
         method: "PATCH",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ markRead: true }),
       });
     },
-    [refetchMessages]
+    [refetchMessages, refetchNotas, refetchEventos]
   );
 
   /** 026 — Saca una conversación eliminada de todo lo que esta pestaña recuerda. */
@@ -121,12 +183,30 @@ export function InboxClient({
     if (selectedIdRef.current === id) {
       setSelectedId(null);
       setMessages([]);
+      setNotas([]);
+      setEventos([]);
+      setReplyTo(null);
     }
   }, []);
 
   // Enlace directo desde Contactos/Pipeline: /inbox?contact=<id>
   const searchParams = useSearchParams();
   const contactParam = searchParams.get("contact");
+  // 056 — Al tocar un aviso del sistema: /inbox?conversation=<id>. Se aplica
+  // una vez por aviso; si no, cada refresco de la lista volvería a saltar ahí.
+  const conversationParam = searchParams.get("conversation");
+  const [pedida, setPedida] = useState<string | null>(null);
+  useEffect(() => setPedida(conversationParam), [conversationParam]);
+  useEffect(() => {
+    const alPedir = (e: Event) => setPedida((e as CustomEvent<string>).detail);
+    window.addEventListener(EVENTO_ABRIR_CONVERSACION, alPedir);
+    return () => window.removeEventListener(EVENTO_ABRIR_CONVERSACION, alPedir);
+  }, []);
+  useEffect(() => {
+    if (!pedida || !conversations?.some((c) => c.id === pedida)) return;
+    setPedida(null);
+    if (selectedIdRef.current !== pedida) select(pedida);
+  }, [pedida, conversations, select]);
   useEffect(() => {
     if (!contactParam || selectedIdRef.current) return;
     const match = conversations?.find((c) => c.contact.id === contactParam);
@@ -134,6 +214,15 @@ export function InboxClient({
   }, [contactParam, conversations, select]);
 
   useEvents({
+    // 050 — Se relee la lista: `puedeBorrar` depende de quién mira.
+    onNoteNew: ({ conversationId }) => {
+      if (selectedIdRef.current === conversationId) void refetchNotas(conversationId);
+    },
+    onNoteDeleted: ({ conversationId, noteId }) => {
+      if (selectedIdRef.current === conversationId) {
+        setNotas((prev) => prev.filter((n) => n.id !== noteId));
+      }
+    },
     onMessageNew: ({ conversationId, message }) => {
       if (selectedIdRef.current === conversationId) {
         const m = message as MessageDto;
@@ -146,9 +235,44 @@ export function InboxClient({
           body: JSON.stringify({ markRead: true }),
         });
       }
-      void refetchConversations();
+      void refetchJunta();
       // Un entrante nuevo puede crear/mover el lead: refresca el panel.
       setDetailRev((v) => v + 1);
+    },
+    // 072 — Una reacción nueva (del cliente o de alguien del equipo).
+    onReactionUpdated: ({ conversationId, messageId, reactions }) => {
+      if (selectedIdRef.current !== conversationId) return;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, reactions: reactions as ReaccionDto[] } : m
+        )
+      );
+    },
+    // 074 — El cliente (o el negocio desde el teléfono) editó un mensaje.
+    onMessageUpdated: ({ conversationId, messageId, text, caption, editedAt, originalText }) => {
+      void refetchJunta(); // la vista previa de la lista puede ser ese mensaje
+      if (selectedIdRef.current !== conversationId) return;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId
+            ? {
+                ...m,
+                text,
+                media: caption !== null && m.media ? { ...m.media, caption } : m.media,
+                editedAt,
+                originalText,
+              }
+            : m
+        )
+      );
+    },
+    onMessageMedia: ({ conversationId, messageId, media }) => {
+      if (selectedIdRef.current !== conversationId) return;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, media: media as MessageDto["media"] } : m
+        )
+      );
     },
     onMessageStatus: ({ conversationId, messageId, status, error }) => {
       if (selectedIdRef.current !== conversationId) return;
@@ -165,7 +289,9 @@ export function InboxClient({
       );
     },
     onConversationUpdated: () => {
-      void refetchConversations();
+      void refetchJunta();
+      // 054 — Cambió la etapa o la IA: el hilo pinta el evento en vivo.
+      if (selectedIdRef.current) void refetchEventos(selectedIdRef.current);
       // El agente movió de etapa o cambió el handoff: refresca el panel en vivo.
       setDetailRev((v) => v + 1);
     },
@@ -174,12 +300,15 @@ export function InboxClient({
       // ya, sin esperar al refetch, para que nadie le escriba a un hilo que
       // no existe.
       quitarConversacion(conversationId);
-      void refetchConversations();
+      void refetchJunta();
     },
     onReconnect: () => {
       // Catch-up tras reconexión (contrato sse.md): refetch completo.
-      void refetchConversations();
-      if (selectedIdRef.current) void refetchMessages(selectedIdRef.current);
+      void refetchJunta();
+      if (selectedIdRef.current) {
+        void refetchMessages(selectedIdRef.current);
+        void refetchEventos(selectedIdRef.current);
+      }
       setDetailRev((v) => v + 1);
     },
   });
@@ -192,6 +321,31 @@ export function InboxClient({
    * que cada pendiente se empareja con UN mensaje real (no por texto suelto:
    * mandar "hola" dos veces seguidas no debe borrar la segunda burbuja).
    */
+  // 072 — Reaccionar como equipo ("" la quita). Devuelve el motivo si falla.
+  const reaccionar = useCallback(
+    async (m: MessageDto, emoji: string): Promise<string | null> => {
+      const res = await fetch(
+        `/api/conversations/${m.conversationId}/messages/${m.id}/reaction`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ emoji }),
+        }
+      ).catch(() => null);
+      if (!res) return "Sin conexión con el servidor";
+      const data = (await res.json().catch(() => null)) as {
+        reactions?: ReaccionDto[];
+        error?: { message?: string };
+      } | null;
+      if (!res.ok) return data?.error?.message ?? "No se pudo enviar la reacción";
+      setMessages((prev) =>
+        prev.map((x) => (x.id === m.id ? { ...x, reactions: data?.reactions ?? [] } : x))
+      );
+      return null;
+    },
+    []
+  );
+
   const thread = useMemo(() => {
     const propios = pending.filter((p) => p.conversationId === selectedId);
     if (propios.length === 0) return messages;
@@ -221,6 +375,8 @@ export function InboxClient({
         aiGenerated: false,
         origin: "operator",
         media: null,
+        quotable: false,
+        replyTo: p.replyTo,
         createdAt: p.createdAt,
       })),
     ];
@@ -233,7 +389,7 @@ export function InboxClient({
    * jamás se pierde en silencio.
    */
   const sendText = useCallback(
-    async (text: string): Promise<string | null> => {
+    async (text: string, cita: MessageDto | null = null): Promise<string | null> => {
       const conversationId = selectedIdRef.current;
       if (!conversationId) return "Sin conversación seleccionada";
 
@@ -244,6 +400,7 @@ export function InboxClient({
           id: tmpId,
           conversationId,
           text,
+          replyTo: cita ? citaDe(cita) : null,
           createdAt: new Date().toISOString(),
         },
       ]);
@@ -253,7 +410,9 @@ export function InboxClient({
         const res = await fetch(`/api/conversations/${conversationId}/messages`, {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ text }),
+          body: JSON.stringify(
+            cita ? { text, replyToMessageId: cita.id } : { text }
+          ),
         }).catch(() => null);
         if (!res) {
           drop();
@@ -319,33 +478,41 @@ export function InboxClient({
   );
 
   return (
-    <div className="flex h-full">
+    // 061 · D3 — En escritorio, la lista, el hilo y el panel son tarjetas
+    // separadas sobre el marco.
+    <div className="flex h-full lg:gap-[var(--hueco)]">
       {/* Móvil: una columna a la vez. La lista cede la pantalla completa al
           hilo en cuanto hay conversación elegida (patrón maestro-detalle). */}
       <section
         className={cn(
-          "w-full shrink-0 overflow-hidden border-r md:w-[300px] lg:w-[360px]",
+          "w-full shrink-0 overflow-hidden md:w-[300px] md:border-r lg:w-[340px] lg:overflow-visible lg:border-r-0",
           selected && "max-md:hidden"
         )}
       >
+        {fijar.error && (
+          <p data-aviso-fijar role="status" className="border-b px-4 py-2.5 text-xs text-danger-text">
+            {fijar.error}
+          </p>
+        )}
         <ConversationList
           conversations={conversations}
           channels={channels}
           selectedId={selectedId}
           onSelect={select}
+          onTogglePin={(c) => void fijar.toggle(c)}
           onSeeded={() => void refetchConversations()}
         />
       </section>
 
       <section
         className={cn(
-          "flex min-w-0 flex-1 flex-col",
+          "flex min-w-0 flex-1 flex-col lg:gap-[var(--hueco)]",
           !selected && "max-md:hidden"
         )}
       >
         {selected ? (
           <>
-            <header className="flex items-center justify-between gap-1 border-b bg-background px-2 py-2.5 md:px-4">
+            <header className="flex items-center justify-between gap-1 border-b bg-background px-2 py-2.5 md:px-4 lg:tarjeta lg:border-b-0 lg:px-5 lg:py-3">
               {/* Volver a la lista: en móvil el hilo ocupa toda la pantalla. */}
               <button
                 onClick={() => setSelectedId(null)}
@@ -361,7 +528,7 @@ export function InboxClient({
                   size="md"
                 />
                 <div className="min-w-0">
-                  <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold leading-tight tracking-tight">
+                  <p className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold leading-tight tracking-tight lg:text-[18px] lg:font-semibold">
                     {multiChannel && <ChannelBadge channel={selected.channel} />}
                     <span className="truncate">{selected.contact.name}</span>
                   </p>
@@ -390,6 +557,10 @@ export function InboxClient({
                   </p>
                 </div>
               </div>
+              <PinHeaderButton
+                pinned={Boolean(selected.pinnedAt)}
+                onToggle={() => void fijar.toggle(selected)}
+              />
               {!panelOpen && (
                 <button
                   onClick={() => togglePanel(true)}
@@ -400,22 +571,86 @@ export function InboxClient({
                 </button>
               )}
             </header>
-            <MessageThread messages={thread} />
             <Composer
               // 028: uno por conversación. Sin la llave, el borrador, el adjunto
               // elegido y el panel abierto pasaban a la siguiente conversación.
+              // 043: el hilo va dentro (la zona donde se suelta una imagen es
+              // la conversación entera), así que la llave también lo reinicia
+              // a él: el aviso «Imagen reenviada a…» no pasa a otra.
               key={selected.id}
               conversation={selected}
               onSend={sendText}
+              replyTo={replyTo?.conversationId === selected.id ? replyTo : null}
+              onReplyChange={setReplyTo}
+              draft={draft?.conversationId === selected.id ? draft : null}
               onSent={() => {
                 if (selectedIdRef.current)
                   void refetchMessages(selectedIdRef.current);
                 void refetchConversations();
               }}
-            />
+              onNota={async (texto) => {
+                const id = selected.id;
+                const res = await fetch(`/api/conversations/${id}/notes`, {
+                  method: "POST",
+                  headers: { "content-type": "application/json" },
+                  body: JSON.stringify({ texto }),
+                }).catch(() => null);
+                if (!res?.ok) {
+                  const d = (await res?.json().catch(() => null)) as { error?: { message?: string } } | null;
+                  return d?.error?.message ?? "No se pudo guardar la nota. Revisa la conexión.";
+                }
+                const { nota } = (await res.json()) as { nota: NotaDto };
+                if (selectedIdRef.current === id) {
+                  setNotas((prev) => (prev.some((n) => n.id === nota.id) ? prev : [...prev, nota]));
+                }
+                return null;
+              }}
+            >
+              <MessageThread
+                messages={thread}
+                notas={notas}
+                eventos={eventos}
+                onBorrarNota={async (n) => {
+                  if (!window.confirm("¿Borrar esta nota interna?")) return;
+                  const res = await fetch(`/api/conversations/${n.conversationId}/notes/${n.id}`, {
+                    method: "DELETE",
+                  }).catch(() => null);
+                  if (res?.ok) setNotas((prev) => prev.filter((x) => x.id !== n.id));
+                }}
+                contactName={selected.contact.name}
+                // 072: reaccionar donde el canal lo permite, con la ventana
+                // estándar abierta (si no, los botones dicen por qué no).
+                onReact={canalReacciona(selected.channel) ? reaccionar : undefined}
+                reaccionBloqueada={selected.windowOpen ? null : MOTIVO_VENTANA_CERRADA}
+                // 039: citar solo donde el canal lo permite y se puede escribir
+                // texto libre (con la ventana cerrada solo salen plantillas).
+                onReply={
+                  selected.composer.quoteReply && selected.windowOpen
+                    ? setReplyTo
+                    : undefined
+                }
+                // 074: pedir en texto lo que no se puede mostrar; solo donde
+                // se puede escribir texto libre (ventana abierta).
+                onAskPlainText={
+                  selected.windowOpen
+                    ? () =>
+                        setDraft({
+                          conversationId: selected.id,
+                          text: PEDIR_EN_TEXTO,
+                          nonce: Date.now(),
+                        })
+                    : undefined
+                }
+                conversations={conversations ?? []}
+                onForwarded={() => {
+                  if (selectedIdRef.current) void refetchMessages(selectedIdRef.current);
+                  void refetchConversations();
+                }}
+              />
+            </Composer>
           </>
         ) : (
-          <div className="thread-bg flex flex-1 flex-col items-center justify-center gap-2 px-6 text-center">
+          <div className="thread-bg flex flex-1 flex-col items-center justify-center gap-2 bg-chat px-6 text-center lg:tarjeta">
             <p className="font-serif text-[24px] italic leading-tight text-text-2">
               Elige una conversación para ver el hilo
             </p>
@@ -436,18 +671,23 @@ export function InboxClient({
 
       <section
         className={cn(
-          "shrink-0 overflow-hidden border-l transition-[width] duration-200",
+          "shrink-0 overflow-hidden border-l transition-[width] duration-200 xl:tarjeta xl:border-l-0",
           // Debajo de xl no hay ancho para una tercera columna: el panel se
           // vuelve un cajón que entra desde la derecha, encima del hilo.
           "max-xl:fixed max-xl:inset-y-0 max-xl:right-0 max-xl:z-40 max-xl:w-auto max-xl:bg-popover max-xl:transition-transform",
           panelOpen && selected
             ? "w-[320px] max-xl:translate-x-0 max-xl:shadow-pop"
-            : "w-0 border-l-0 max-xl:translate-x-full"
+            : "w-0 border-l-0 max-xl:translate-x-full xl:hidden"
         )}
       >
         {selected && (
           <div className="h-full w-[320px] max-xl:w-[min(320px,88vw)]">
+            {/* 068: `key` por conversación. Sin ella, el estado local (notas,
+                borrador de la ficha, confirmación de borrado) sobrevivía al
+                cambio de chat, y guardar en ese instante escribía las notas
+                del contacto anterior en el nuevo. */}
             <ContactPanel
+              key={selected.id}
               conversation={selected}
               refreshKey={detailRev}
               onPatchConversation={patchConversation}

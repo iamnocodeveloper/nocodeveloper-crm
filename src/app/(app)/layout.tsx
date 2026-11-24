@@ -1,16 +1,20 @@
 import { redirect } from "next/navigation";
-import { cookies, headers } from "next/headers";
-import { getAuth } from "@/lib/auth";
+import { headers } from "next/headers";
 import { getSessionOrNull } from "@/lib/auth/session";
-import { normalizeThemePreference, THEME_COOKIE } from "@/lib/theme";
+import { leerSesion } from "@/lib/auth/leer-sesion";
+import { aparienciaActual } from "@/server/apariencia";
 import { getBranding } from "@/server/branding";
 import { AppShell } from "@/components/app-shell";
+import { SessionKeepalive } from "@/components/session-keepalive";
 import { resolveCommit } from "@/lib/version";
 import { agendaEnabled } from "@/server/agenda/flag";
 import { enabledChannels } from "@/server/channels/enabled";
 import { navKicker } from "@/lib/channels";
 import { avisoIaDe } from "@/server/ai/aviso";
 import { AvisoIaBanner } from "@/components/avisos/aviso-ia";
+import { AvisoCuentaBanner } from "@/components/avisos/aviso-cuenta";
+import { saasModeEnabled } from "@/server/saas/mode";
+import { avisoCuentaDe, getTenant } from "@/server/saas/tenant";
 
 export default async function AppLayout({
   children,
@@ -18,23 +22,24 @@ export default async function AppLayout({
   const session = await getSessionOrNull();
   if (!session) redirect("/login");
   const branding = await getBranding(session.organizationId);
-  const authSession = await getAuth().api.getSession({
-    headers: await headers(),
-  });
-  const theme = normalizeThemePreference(
-    (await cookies()).get(THEME_COOKIE)?.value
-  );
+  const authSession = await leerSesion(await headers());
+  // 062 — Para el botón de sol y luna: salta a la pareja del tema actual.
+  const { apariencia } = await aparienciaActual(session.organizationId);
   // El agente encendido y sin con qué pensar se ve desde fuera igual que un
   // bot roto. Se resuelve en el servidor y en el layout para que se vea desde
   // CUALQUIER pantalla, no solo desde el panel de un contacto (#85).
   const aviso = await avisoIaDe(session.organizationId);
+  // K1 — Estado de la cuenta SaaS (suspendida, prueba que acaba…).
+  const avisoCuenta = saasModeEnabled()
+    ? avisoCuentaDe(await getTenant(session.organizationId))
+    : null;
 
   return (
     <AppShell
       branding={branding}
       userName={authSession?.user.name ?? "Usuario"}
       role={session.role}
-      theme={theme}
+      apariencia={apariencia}
       // Se resuelve aquí, en el servidor: el cliente no ve `SOURCE_COMMIT`.
       // Baja con su procedencia, para que la insignia no presente como
       // verificado un commit que no salió del build (#50).
@@ -44,8 +49,15 @@ export default async function AppLayout({
       // cliente: no puede —ni debe— leer variables de entorno.
       agenda={agendaEnabled()}
       kicker={navKicker([...enabledChannels()])}
-      aviso={<AvisoIaBanner aviso={aviso} />}
+      aviso={
+        <>
+          <AvisoCuentaBanner aviso={avisoCuenta} />
+          <AvisoIaBanner aviso={aviso} />
+        </>
+      }
     >
+      {/* 073 — La sesión la renueva el navegador: ver `leerSesion`. */}
+      <SessionKeepalive />
       {children}
     </AppShell>
   );

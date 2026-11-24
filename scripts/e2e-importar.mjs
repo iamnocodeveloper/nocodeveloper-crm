@@ -12,7 +12,7 @@
  *
  * Uso (configuración estándar de la 036, ver `scripts/lib/cerebro-falso.mjs`):
  *   1) app corriendo (`pnpm dev`) sobre una base migrada, con
- *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/vocero/dispatch, BOT_API_KEY,
+ *      BRAIN_DISPATCH_URL=http://127.0.0.1:3261/nocodeveloper/dispatch, BOT_API_KEY,
  *      WA_MOCK_ENABLED=true, META_GRAPH_BASE_URL → wa-mock,
  *      OPENROUTER_BASE_URL → ai-mock con OPENROUTER_API_TOKEN y
  *      OPENROUTER_MODEL, y AGENT_COALESCE_MS=1500.
@@ -100,7 +100,7 @@ let cerebro = null;
 async function main() {
   cerebro = await levantarCerebroFalso({ base: BASE, botKey: process.env.BOT_API_KEY ?? "" });
   console.log("== Setup ==");
-  const email = "e2e@vocero.test";
+  const email = "e2e@nocodeveloper.test";
   const password = "password-e2e-123";
   let su = await api("/api/auth/sign-up/email", { method: "POST", body: JSON.stringify({ email, password, name: "Operador E2E" }) });
   if (!su.res.ok) su = await api("/api/auth/sign-in/email", { method: "POST", body: JSON.stringify({ email, password }) });

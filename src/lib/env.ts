@@ -43,6 +43,10 @@ export const envSchema = z.object({
   // conversacion, no se le reporta nada a Meta y la superficie da 404.
   // Ej.: ATRIBUCION=on
   ATRIBUCION: z.string().optional(),
+  // 069: API publica v1 (/api/v1/*), su MCP y el OAuth para conectarlo desde
+  // claude.ai o ChatGPT. Apagada por defecto: sin ella toda esa superficie y
+  // Ajustes -> API responden 404. Ej.: API_V1=on
+  API_V1: z.string().optional(),
   // 031: WhatsApp por la API oficial a través de Zernio (con coexistencia).
   // Apagado por defecto: sin él, el número se conecta solo con Meta directo y
   // la ruta y la pantalla de Zernio para WhatsApp responden 404.
@@ -58,7 +62,21 @@ export const envSchema = z.object({
     .default("https://www.googleapis.com/calendar/v3"),
   GOOGLE_OAUTH_BASE_URL: z.string().url().default("https://oauth2.googleapis.com"),
   ALLOW_SIGNUP: z.string().optional(),
+  // K1 — Kooni SaaS. Con SAAS_MODE=on cada registro público crea SU negocio
+  // (organización + cuenta en prueba). Sin ella, el CRM se comporta como el
+  // original: una instancia = un negocio.
+  SAAS_MODE: z.string().optional(),
+  // K1 — Cerrar el registro público en modo SaaS (SIGNUP_CLOSED=true).
+  SIGNUP_CLOSED: z.string().optional(),
+  // K1 — Días de prueba gratis de un negocio nuevo.
+  SAAS_TRIAL_DAYS: z.coerce.number().int().min(0).default(14),
+  // K4 — Correos con acceso al panel /admin, separados por coma.
+  SUPERADMIN_EMAILS: z.string().optional(),
   AGENT_COALESCE_MS: z.coerce.number().int().min(0).default(6000),
+  // 075: cada cuánto la red de seguridad busca turnos entregados al cerebro
+  // que nadie contestó. Intervalo interno, no ajuste del negocio; 0 la apaga
+  // (los guiones locales la conducen a mano por /api/dev/red-de-seguridad).
+  RED_DE_SEGURIDAD_MS: z.coerce.number().int().min(0).default(60_000),
   WA_MOCK_ENABLED: z.string().optional(),
   // API key de un cerebro externo que conduzca la conversación por /api/bot/*.
   // Sin ella, toda esa superficie responde 401.
@@ -72,7 +90,7 @@ export const envSchema = z.object({
   // configuración y lo demás sigue funcionando (server/bot/status.ts).
   BRAIN_HEALTH_URL: z.string().optional(),
   // 021: a dónde le despacha el CRM cada turno al cerebro externo. Ej.:
-  // http://nea:8000/vocero/dispatch. Con ella, `BOT_API_KEY` y el interruptor
+  // http://nea:8000/nocodeveloper/dispatch. Con ella, `BOT_API_KEY` y el interruptor
   // del Agente encendido, contesta el cerebro (036). Tampoco se valida aquí,
   // por lo mismo que la de arriba: mal escrita, el despacho queda inactivo y
   // la tarjeta lo dice (server/brains/config.ts).

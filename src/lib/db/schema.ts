@@ -376,7 +376,8 @@ export const conversation = pgTable(
     aiEnabled: boolean("ai_enabled").notNull().default(true),
     handoffAt: timestamp("handoff_at"),
     handoffReason: text("handoff_reason", {
-      // 008: manual_reply = el dueño respondió desde la app del teléfono.
+      // 008: manual_reply = una persona del negocio respondió (068: desde el
+      // teléfono o desde la Bandeja).
       // hostilidad = el lead se puso agresivo y el agente se retiró.
       enum: [
         "cliente",
@@ -385,6 +386,8 @@ export const conversation = pgTable(
         "ventana",
         "hostilidad",
         "manual_reply",
+        // 075: el turno quedó sin contestar aunque se relanzó dos veces.
+        "sin_respuesta",
       ],
     }),
     lastInboundAt: timestamp("last_inbound_at"),
@@ -438,6 +441,18 @@ export const message = pgTable(
     mediaAssetId: text("media_asset_id").references(() => mediaAsset.id, {
       onDelete: "set null",
     }),
+    /**
+     * 039 — `wamid` del mensaje al que responde (cita). Sin FK: el citado
+     * puede no estar en el CRM; se resuelve al leer (`inbox/quotes.ts`).
+     */
+    replyToWaMessageId: text("reply_to_wa_message_id"),
+    /**
+     * 074 — Hora (según Meta) de la última edición; NULL = nunca se editó.
+     * Hoy solo las manda WhatsApp en coexistencia (`type: "edit"`).
+     */
+    editedAt: timestamp("edited_at"),
+    /** 074 — El texto (o pie) con el que llegó, antes de la primera edición. */
+    originalText: text("original_text"),
     waTimestamp: timestamp("wa_timestamp"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
@@ -1287,6 +1302,18 @@ export const dispatch = pgTable(
      * anteriores a esta columna, que se comportan como antes.
      */
     messageIds: jsonb("message_ids").$type<string[]>(),
+    /**
+     * 075 — Qué vuelta de la red de seguridad es este despacho: 0 si lo
+     * provocó el cliente, 1 o 2 si lo volvió a mandar la red porque el
+     * anterior quedó sin contestar. Viaja al cerebro como `relaunch`.
+     */
+    relaunchCount: integer("relaunch_count").notNull().default(0),
+    /**
+     * 075 — Cuándo la red de seguridad revisó este despacho entregado. Se
+     * escribe UNA vez, con un UPDATE condicionado a que siga vacío: así dos
+     * barridos (o dos procesos) no lo relanzan dos veces.
+     */
+    safetyNetAt: timestamp("safety_net_at"),
     /** Motivo del último fallo. Nunca el cuerpo firmado ni la llave. */
     lastError: text("last_error"),
     createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -1316,5 +1343,413 @@ export const dispatch = pgTable(
     ),
     // La consulta del worker: pendientes cuya ventana ya venció.
     index("dispatch_status_notbefore_idx").on(t.status, t.notBefore),
+    /**
+     * 075 — La consulta de la red de seguridad: entregados que todavía no
+     * revisó, por hora de entrega. Parcial: el histórico ya revisado no pesa.
+     */
+    index("dispatch_red_seguridad_idx")
+      .on(t.updatedAt)
+      .where(sql`${t.status} = 'entregado' and ${t.safetyNetAt} is null`),
   ]
 );
+
+/* ============================================================
+ * 047 — Eventos de webhook guardados antes de procesarse
+ * ============================================================ */
+
+/**
+ * El cuerpo de cada entrega de Meta o Zernio, tal como llegó, guardado ANTES
+ * de acusar recibo. Si procesarlo falla, el barrido lo reintenta con espera
+ * creciente (`src/server/webhooks/`); si no se pudo ni guardar, la ruta
+ * responde 503 y reintenta quien lo mandó.
+ *
+ * Trae datos del cliente: se borra a los 7 días de procesado y a los 30 de
+ * agotado, y nunca sale a la API ni a los logs.
+ */
+export const webhookEvent = pgTable(
+  "webhook_event",
+  {
+    id: text("id").primaryKey(),
+    /** Resuelto al recibir, con las mismas credenciales que usa la ingesta. */
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    /** Quién lo procesa: el adaptador del canal y la fuente. */
+    fuente: text("fuente", {
+      enum: ["whatsapp", "meta_instagram", "meta_messenger", "zernio"],
+    }).notNull(),
+    payload: jsonb("payload").notNull(),
+    /** SHA-256 del cuerpo crudo: la misma entrega dos veces es una fila. */
+    huella: text("huella").notNull(),
+    status: text("status", {
+      enum: ["pendiente", "en_proceso", "procesado", "agotado"],
+    })
+      .notNull()
+      .default("pendiente"),
+    /** Sube al reclamar: distingue a dos dueños de una misma reserva. */
+    attempts: integer("attempts").notNull().default(0),
+    notBefore: timestamp("not_before").notNull().defaultNow(),
+    leasedUntil: timestamp("leased_until"),
+    /** El mensaje de la excepción, recortado. Nunca el cuerpo. */
+    lastError: text("last_error"),
+    processedAt: timestamp("processed_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("webhook_event_huella_uq").on(t.huella),
+    // El barrido solo lee lo vivo: con el índice parcial, una tabla llena de
+    // procesados no lo hace más lento.
+    index("webhook_event_barrido_idx")
+      .on(t.status, t.notBefore)
+      .where(sql`${t.status} in ('pendiente', 'en_proceso')`),
+    // Los conteos de Ajustes → WhatsApp.
+    index("webhook_event_org_status_idx").on(t.organizationId, t.status),
+  ]
+);
+
+/* ============================================================
+ * 049 — Respuestas rápidas («/atajo» en el compositor)
+ * ============================================================ */
+
+/**
+ * Textos que el equipo inserta con `/atajo` en vez de teclearlos otra vez
+ * (horario, pago, envío…). Compartidas por la organización: las administra
+ * quien configura y las usa cualquiera. No son plantillas de Meta: solo sirven
+ * con la ventana abierta.
+ */
+export const quickReply = pgTable(
+  "quick_reply",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    /** Normalizado: minúsculas, sin acentos, `[a-z0-9_-]{1,32}`. */
+    atajo: text("atajo").notNull(),
+    /** Hasta 4 096 caracteres (el tope de WhatsApp). Admite `{nombre}`. */
+    texto: text("texto").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [uniqueIndex("quick_reply_org_atajo_uq").on(t.organizationId, t.atajo)]
+);
+
+/* ============================================================
+ * 050 — Notas internas en el hilo
+ * ============================================================ */
+
+/**
+ * Lo que el equipo se anota dentro de una conversación y el cliente nunca ve.
+ *
+ * Tabla propia A PROPÓSITO, no un tipo de `message`: el envío a Meta, el
+ * despacho al cerebro, «sin responder», la ventana y las métricas leen
+ * `message`, y así ninguno puede tocar una nota por descuido. Una prueba
+ * vigila que esas rutas no la mencionen.
+ */
+export const conversationNote = pgTable(
+  "conversation_note",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversation.id, { onDelete: "cascade" }),
+    /** Si se borra la cuenta, la nota queda («Alguien del equipo»). */
+    authorUserId: text("author_user_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    texto: text("texto").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    index("conversation_note_conv_idx").on(t.organizationId, t.conversationId, t.createdAt),
+  ]
+);
+
+/**
+ * 069 — Llaves de la API pública v1 (`/api/v1/*`), detrás de la bandera `API_V1`.
+ *
+ * Cada llave es de UNA organización: la organización de cada petición sale de
+ * la llave, nunca del Host ni del cuerpo. Solo se guarda el sha256 de la llave
+ * completa; el valor se enseña una sola vez, al crearla. Para reconocerla en
+ * la lista quedan el prefijo visible y los últimos 4.
+ *
+ * La llave actúa con los permisos de quien la creó, recortados a sus
+ * `scopes`: si esa persona pierde el acceso a la organización, la llave deja
+ * de servir sin que nadie tenga que acordarse de revocarla.
+ */
+export const apiKey = pgTable(
+  "api_key",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: text("name").notNull(),
+    /** `vk_` + los primeros caracteres: lo único que se reconoce a simple vista. */
+    prefix: text("prefix").notNull(),
+    last4: text("last4").notNull(),
+    /** sha256 hex de la llave completa. */
+    hash: text("hash").notNull(),
+    /** `read` · `operate` · `send` · `configure` (mandar mensajes y configurar van aparte de operar). */
+    scopes: text("scopes").array().notNull(),
+    createdByUserId: text("created_by_user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    lastUsedAt: timestamp("last_used_at"),
+    requestCount: integer("request_count").notNull().default(0),
+    revokedAt: timestamp("revoked_at"),
+  },
+  (t) => [
+    uniqueIndex("api_key_hash_uq").on(t.hash),
+    index("api_key_org_idx").on(t.organizationId),
+  ]
+);
+
+/**
+ * Fase 3 — OAuth para el MCP (claude.ai, ChatGPT, Claude Code sin llave).
+ *
+ * El servidor de autorización vive en el subdominio de CADA negocio: un
+ * cliente registrado en `a.nocodevelopercrm.com` es de A y no sirve en B, y todo lo
+ * que emite queda atado a esa organización. Es otra forma de presentarse ante
+ * la misma puerta de `/api/v1`: el token actúa como la persona que lo
+ * concedió, recortado a sus permisos, igual que una llave.
+ */
+
+/** Un cliente registrado por registro dinámico (RFC 7591). Siempre público: sin secreto, con PKCE. */
+export const oauthClient = pgTable(
+  "oauth_client",
+  {
+    /** El `client_id` que ve el cliente. */
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    /** `client_name` tal como lo mandó el cliente: no es de fiar, se enseña junto al host de regreso. */
+    name: text("name").notNull(),
+    redirectUris: text("redirect_uris").array().notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("oauth_client_org_idx").on(t.organizationId)]
+);
+
+/**
+ * Una app conectada: lo que una persona le concedió a un cliente. Es lo que
+ * se ve (y se revoca) en Ajustes → API. Revocarla mata todos sus tokens.
+ */
+export const oauthGrant = pgTable(
+  "oauth_grant",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    clientId: text("client_id")
+      .notNull()
+      .references(() => oauthClient.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** `read` · `operate` · `configure`. */
+    scopes: text("scopes").array().notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    lastUsedAt: timestamp("last_used_at"),
+    requestCount: integer("request_count").notNull().default(0),
+    revokedAt: timestamp("revoked_at"),
+  },
+  (t) => [
+    index("oauth_grant_org_idx").on(t.organizationId),
+    index("oauth_grant_client_user_idx").on(t.clientId, t.userId),
+  ]
+);
+
+/**
+ * Códigos de autorización, tokens de acceso y de refresco. Como las llaves,
+ * solo se guarda el sha256: el valor sale una vez, en la respuesta.
+ */
+export const oauthToken = pgTable(
+  "oauth_token",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    grantId: text("grant_id")
+      .notNull()
+      .references(() => oauthGrant.id, { onDelete: "cascade" }),
+    /** `code` · `access` · `refresh`. */
+    kind: text("kind").notNull(),
+    hash: text("hash").notNull(),
+    scopes: text("scopes").array().notNull(),
+    /** Solo en `code`: PKCE (S256) y el redirect_uri exacto que se usó. */
+    codeChallenge: text("code_challenge"),
+    redirectUri: text("redirect_uri"),
+    expiresAt: timestamp("expires_at").notNull(),
+    /** Un código o un refresh se usan UNA vez; reusarlos delata un robo. */
+    usedAt: timestamp("used_at"),
+    revokedAt: timestamp("revoked_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("oauth_token_hash_uq").on(t.hash),
+    index("oauth_token_grant_idx").on(t.grantId),
+  ]
+);
+
+/**
+ * 070 — Chats fijados arriba de la Bandeja, de CADA usuario: lo que fija una
+ * persona del equipo no cambia la Bandeja de las demás. Máximo 3 por usuario
+ * (lo impone `src/server/inbox/pins.ts`). Se borra con la conversación y con
+ * el usuario.
+ */
+export const conversationPin = pgTable(
+  "conversation_pin",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversation.id, { onDelete: "cascade" }),
+    pinnedAt: timestamp("pinned_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("conversation_pin_user_conv_uq").on(t.userId, t.conversationId),
+    index("conversation_pin_org_user_idx").on(t.organizationId, t.userId),
+  ]
+);
+
+/**
+ * 072 — Reacciones a un mensaje (👍 ❤️ …), del cliente o del equipo.
+ *
+ * Una por actor y mensaje: WhatsApp, Instagram y Messenger guardan UNA sola
+ * reacción del negocio por mensaje, así que el equipo es un solo actor
+ * (`user_id` dice quién la puso). Quitar la reacción borra la fila.
+ */
+export const messageReaction = pgTable(
+  "message_reaction",
+  {
+    id: text("id").primaryKey(),
+    organizationId: text("organization_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    conversationId: text("conversation_id")
+      .notNull()
+      .references(() => conversation.id, { onDelete: "cascade" }),
+    messageId: text("message_id")
+      .notNull()
+      .references(() => message.id, { onDelete: "cascade" }),
+    actor: text("actor", { enum: ["cliente", "equipo"] }).notNull(),
+    /** Quién del equipo la puso; null en las del cliente. */
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
+    emoji: text("emoji").notNull(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("message_reaction_message_actor_uq").on(t.messageId, t.actor),
+    index("message_reaction_conv_idx").on(t.organizationId, t.conversationId),
+  ]
+);
+
+/* ============================================================
+ * Kooni SaaS — planes y cuenta de cada negocio
+ * ============================================================ */
+
+/**
+ * K1 — Planes del SaaS. Los edita el superadmin desde /admin. Un límite en
+ * null significa «sin límite». Stripe llegará después (`stripe_price_id`).
+ */
+export const saasPlan = pgTable("saas_plan", {
+  id: text("id").primaryKey(),
+  name: text("name").notNull(),
+  /** Precio mensual en céntimos, solo informativo hasta que llegue Stripe. */
+  priceCents: integer("price_cents").notNull().default(0),
+  currency: text("currency").notNull().default("USD"),
+  /** Mensajes salientes al mes (IA + operador + plantillas + avisos de pedidos). */
+  maxMessagesMonth: integer("max_messages_month"),
+  maxUsers: integer("max_users"),
+  maxWhatsappNumbers: integer("max_whatsapp_numbers").notNull().default(1),
+  /** Proveedores de WhatsApp que permite el plan: waha, meta, zernio. */
+  providers: jsonb("providers").$type<string[]>().notNull().default(["waha", "meta", "zernio"]),
+  woocommerce: boolean("woocommerce").notNull().default(true),
+  isDefault: boolean("is_default").notNull().default(false),
+  archived: boolean("archived").notNull().default(false),
+  stripePriceId: text("stripe_price_id"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+/**
+ * K1 — La cuenta SaaS de cada negocio (una fila por organización): plan,
+ * estado y fechas. Es lo que el panel de admin lista y lo que decide si el
+ * negocio puede operar.
+ */
+export const saasTenant = pgTable(
+  "saas_tenant",
+  {
+    organizationId: text("organization_id")
+      .primaryKey()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    planId: text("plan_id").references(() => saasPlan.id, { onDelete: "set null" }),
+    status: text("status", {
+      enum: ["trial", "active", "past_due", "suspended", "cancelled"],
+    })
+      .notNull()
+      .default("trial"),
+    trialEndsAt: timestamp("trial_ends_at"),
+    suspendedReason: text("suspended_reason"),
+    /** Límite propio que pisa al del plan (null = el del plan). */
+    overrideMaxMessagesMonth: integer("override_max_messages_month"),
+    /** Notas internas del superadmin. Nunca se enseñan al cliente. */
+    notes: text("notes"),
+    ownerEmail: text("owner_email"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [index("saas_tenant_status_idx").on(t.status)]
+);
+
+/** K1 — Bitácora del superadmin: quién cambió qué en qué negocio. */
+export const saasAuditLog = pgTable(
+  "saas_audit_log",
+  {
+    id: text("id").primaryKey(),
+    actorUserId: text("actor_user_id"),
+    actorEmail: text("actor_email"),
+    organizationId: text("organization_id"),
+    action: text("action").notNull(),
+    detail: jsonb("detail").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [index("saas_audit_org_idx").on(t.organizationId, t.createdAt)]
+);
+
+/**
+ * K4 — Integraciones de la plataforma (una fila por proveedor: waha, zernio).
+ * Las rellena el superadmin desde /admin → Integraciones, no el .env. La llave
+ * va cifrada (AES-256-GCM, misma ENCRYPTION_KEY que el resto de secretos).
+ */
+export const saasIntegration = pgTable("saas_integration", {
+  key: text("key", { enum: ["waha", "zernio"] }).primaryKey(),
+  enabled: boolean("enabled").notNull().default(false),
+  /** Datos no secretos: URL base, motor de WAHA, etc. */
+  config: jsonb("config").$type<Record<string, string>>().notNull().default({}),
+  /** La llave de API cifrada (`EncryptedValue`). */
+  secret: jsonb("secret").$type<{ cipher: string; iv: string; tag: string }>(),
+  /** Secreto de firma de webhooks, cifrado (Zernio). */
+  webhookSecret: jsonb("webhook_secret").$type<{ cipher: string; iv: string; tag: string }>(),
+  lastTestAt: timestamp("last_test_at"),
+  lastTestOk: boolean("last_test_ok"),
+  lastTestMessage: text("last_test_message"),
+  updatedBy: text("updated_by"),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});

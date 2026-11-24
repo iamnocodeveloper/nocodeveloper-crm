@@ -34,7 +34,7 @@ export const PG_CONNECTION_OPTIONS = {
  * globalThis para no agotar conexiones.
  */
 const globalForDb = globalThis as unknown as {
-  __voceroSql?: ReturnType<typeof postgres>;
+  __nocodeveloperSql?: ReturnType<typeof postgres>;
 };
 
 function createClient() {
@@ -46,8 +46,8 @@ function createClient() {
 }
 
 export function getSql() {
-  if (!globalForDb.__voceroSql) globalForDb.__voceroSql = createClient();
-  return globalForDb.__voceroSql;
+  if (!globalForDb.__nocodeveloperSql) globalForDb.__nocodeveloperSql = createClient();
+  return globalForDb.__nocodeveloperSql;
 }
 
 let cachedDb: ReturnType<typeof drizzle<typeof schema>> | null = null;

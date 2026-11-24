@@ -33,7 +33,7 @@ const ENV_ORIGINAL = { ...process.env };
 let tmp: string;
 
 beforeEach(async () => {
-  tmp = await mkdtemp(path.join(os.tmpdir(), "vocero-health-"));
+  tmp = await mkdtemp(path.join(os.tmpdir(), "nocodeveloper-health-"));
   resetMediaDirCache();
   getDb.mockReturnValue({ execute: async () => [] });
   getEnv.mockReturnValue({ MEDIA_DIR: path.join(tmp, "media") });
@@ -145,6 +145,9 @@ describe("GET /api/health", () => {
       mediaWritable: true,
     });
     expect(typeof cuerpo.version).toBe("string");
+    // 047 — Los eventos de webhook sin entrar. Con la base de mentira no hay
+    // tabla que contar: la llave sale en null y `ok` no se mueve.
+    expect(cuerpo).toHaveProperty("webhooks", null);
     // Los campos de antes siguen delante: quien ya lee `ok` y `version` no
     // nota el cambio.
     expect(Object.keys(cuerpo).slice(0, 2)).toEqual(["ok", "version"]);

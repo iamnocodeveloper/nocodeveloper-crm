@@ -18,12 +18,41 @@ export type SseEvent =
         error?: string | null;
       };
     }
+  /**
+   * 044 — El adjunto de un mensaje terminó de descargarse (o falló): sin
+   * esto la burbuja se quedaba en «descargando…» hasta recargar.
+   */
+  | {
+      type: "message.media";
+      data: { conversationId: string; messageId: string; media: unknown };
+    }
+  /** 074 — Un mensaje se editó (texto o pie): se pinta el nuevo y la marca. */
+  | {
+      type: "message.updated";
+      data: {
+        conversationId: string;
+        messageId: string;
+        text: string | null;
+        /** Pie nuevo si lo editado fue el de un adjunto; si no, null. */
+        caption: string | null;
+        editedAt: string;
+        originalText: string | null;
+      };
+    }
   | { type: "conversation.updated"; data: { conversation: unknown } }
   /** 026 — alguien del equipo eliminó la conversación: se quita de la bandeja. */
   | {
       type: "conversation.deleted";
       data: { conversationId: string; contactId: string; contactDeleted: boolean };
     }
+  /** 050 — una nota interna nueva o borrada: el hilo abierto la pinta o la quita. */
+  | { type: "note.new"; data: { conversationId: string; note: unknown } }
+  /** 072 — Cambiaron las reacciones de un mensaje (del cliente o del equipo). */
+  | {
+      type: "reaction.updated";
+      data: { conversationId: string; messageId: string; reactions: unknown };
+    }
+  | { type: "note.deleted"; data: { conversationId: string; noteId: string } }
   /** 015 — algo cambió en la agenda: la pantalla de Citas se refresca sola. */
   | { type: "booking.updated"; data: { bookingId: string } }
   | {
@@ -36,15 +65,15 @@ export type SseEvent =
       };
     };
 
-const globalForBus = globalThis as unknown as { __voceroBus?: EventEmitter };
+const globalForBus = globalThis as unknown as { __nocodeveloperBus?: EventEmitter };
 
 function getBus(): EventEmitter {
-  if (!globalForBus.__voceroBus) {
+  if (!globalForBus.__nocodeveloperBus) {
     const bus = new EventEmitter();
     bus.setMaxListeners(200);
-    globalForBus.__voceroBus = bus;
+    globalForBus.__nocodeveloperBus = bus;
   }
-  return globalForBus.__voceroBus;
+  return globalForBus.__nocodeveloperBus;
 }
 
 export function publish(organizationId: string, event: SseEvent): void {

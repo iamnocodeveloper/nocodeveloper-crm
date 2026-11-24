@@ -17,10 +17,10 @@ guardada (wizard con credenciales del mock).
 
 ## Reconciliación
 
-6. `POST inbound` con `{from: "5215550001234", name: "Kevin"}` → contacto A.
+6. `POST inbound` con `{from: "5215550001234", name: "Ana"}` → contacto A.
 7. `POST inbound` con `{from: "525550001234", text: "sigo yo"}` → MISMO contacto
    A (no aparece un segundo contacto; normalización 521→52 en ingest).
-8. `POST inbound` con `{from: "525550001234", fromUserId: "bsu_kevin"}` →
+8. `POST inbound` con `{from: "525550001234", fromUserId: "bsu_ana"}` →
    contacto A adquiere el BSUID (verificable respondiendo tras simular pérdida
    del teléfono — fuera de alcance UI; verificar por API/DB).
 

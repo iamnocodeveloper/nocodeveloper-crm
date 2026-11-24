@@ -1,0 +1,9 @@
+{
+  "name": "nocodeveloper",
+  "version": "0.1.0",
+  "description": "Configura y opera tu Nocodeveloper CRM desde Claude: el MCP de Nocodeveloper y la guía para configurar el agente de WhatsApp.",
+  "author": {
+    "name": "Nocodeveloper"
+  },
+  "homepage": "https://nocodevelopercrm.com"
+}

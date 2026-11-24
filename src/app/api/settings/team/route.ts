@@ -5,6 +5,7 @@ import { getAuth, runInternalSignup } from "@/lib/auth";
 import { getDb, schema } from "@/lib/db";
 import { newId } from "@/lib/db/ids";
 import { scoped } from "@/lib/db/tenant";
+import { canAddUser } from "@/server/saas/tenant";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,10 @@ export const POST = withAuth(async (session, req: Request) => {
   }
   const body = await parseBody(req, createSchema);
   if (!body.ok) return body.response;
+
+  // K1 — Límite de usuarios del plan.
+  const room = await canAddUser(session.organizationId);
+  if (!room.ok) return apiError(402, "plan_limit", room.message);
 
   const auth = getAuth();
   let newUserId: string;
