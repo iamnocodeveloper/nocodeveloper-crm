@@ -57,7 +57,6 @@ export function WhatsappZernioCard({ manual = true }: { manual?: boolean }) {
   const [removing, setRemoving] = useState(false);
   const [starting, setStarting] = useState<"coexistencia" | "api" | null>(null);
   const [aviso, setAviso] = useState<{ ok: boolean; text: string } | null>(null);
-  const [avanzado, setAvanzado] = useState(false);
 
   const refetch = useCallback(async () => {
     const c = await fetch("/api/settings/whatsapp-zernio")
@@ -207,21 +206,12 @@ export function WhatsappZernioCard({ manual = true }: { manual?: boolean }) {
           </ul>
         )}
 
-        {manual && platform && (
-          <button
-            type="button"
-            className="text-xs text-text-3 underline underline-offset-2"
-            onClick={() => setAvanzado((v) => !v)}
-          >
-            {avanzado ? "Ocultar opción avanzada" : "Avanzado: usar mi propia cuenta del proveedor"}
-          </button>
-        )}
-
         {!manual && !platform && connection?.status !== "connected" && (
           <p className="text-sm text-text-2">La conexión de WhatsApp estará disponible muy pronto.</p>
         )}
 
-        {manual && (!platform || avanzado) && (
+        {/* Pegar una llave propia solo existe fuera del SaaS y sin cuenta de plataforma. */}
+        {manual && !platform && (
           <>
             <ul className="list-disc space-y-1 pl-5 text-xs text-text-2">
               {PASOS_MANUAL.map((p, i) => (
