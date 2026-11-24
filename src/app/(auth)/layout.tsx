@@ -1,4 +1,5 @@
-import { ShieldCheck, Smartphone, Sparkles } from "lucide-react";
+import { MessageCircle, ShieldCheck, ShoppingBag, Smartphone, Sparkles } from "lucide-react";
+import { saasModeEnabled, trialDays } from "@/server/saas/mode";
 import { DEFAULT_BRANDING } from "@/lib/branding";
 import { getBranding } from "@/server/branding";
 import { enabledChannels } from "@/server/channels/enabled";
@@ -9,6 +10,14 @@ const PUNTOS = [
   { icon: Sparkles, label: "Agente con tu conocimiento" },
   { icon: ShieldCheck, label: "Self-hosted, tus datos" },
   { icon: Smartphone, label: "Móvil + PWA" },
+];
+
+/** K7 — Lo que destaca la entrada del SaaS: lo que le importa a un negocio. */
+const PUNTOS_SAAS = [
+  { icon: MessageCircle, label: "WhatsApp API oficial" },
+  { icon: Sparkles, label: "Asistente con IA" },
+  { icon: ShoppingBag, label: "Pedidos de WooCommerce" },
+  { icon: Smartphone, label: "También en el móvil" },
 ];
 
 /**
@@ -22,6 +31,9 @@ export default async function AuthLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   const branding = await getBranding().catch(() => DEFAULT_BRANDING);
   const producto = productName([...enabledChannels()]);
+  const saas = saasModeEnabled();
+  const dias = trialDays();
+  const puntos = saas ? PUNTOS_SAAS : PUNTOS;
 
   return (
     <main className="min-h-dvh bg-background lg:grid lg:grid-cols-[1.05fr_0.95fr]">
@@ -32,23 +44,34 @@ export default async function AuthLayout({
 
         <div className="relative flex items-center justify-between gap-6">
           <BrandLogo branding={branding} />
-          <span className="kicker text-text-2">Open source · MIT</span>
+          <span className="kicker text-text-2">
+            {saas ? (dias > 0 ? `Prueba gratis · ${dias} días` : "CRM de WhatsApp") : "Open source · MIT"}
+          </span>
         </div>
 
         <div className="relative mt-auto max-w-xl">
           <p className="kicker mb-5 text-brand">CRM · WhatsApp · IA</p>
           <h1 className="font-serif text-[clamp(3rem,5.2vw,4.9rem)] font-normal italic leading-[0.95] tracking-[-0.045em]">
-            El CRM que{" "}
-            <span className="text-brand">se prueba solo.</span>
+            {saas ? (
+              <>
+                Vende más por{" "}
+                <span className="text-brand">WhatsApp.</span>
+              </>
+            ) : (
+              <>
+                El CRM que{" "}
+                <span className="text-brand">se prueba solo.</span>
+              </>
+            )}
           </h1>
           <p className="mt-6 max-w-md text-[15px] leading-relaxed text-text-2">
-            Bandeja en tiempo real, pipeline, un agente con el conocimiento de
-            tu negocio y un Laboratorio que mide si de verdad está listo. En tu
-            servidor, con tus datos y también en el teléfono.
+            {saas
+              ? "Todas tus conversaciones en una bandeja, tus ventas en un pipeline, un asistente con IA que conoce tu negocio y avisos automáticos de tus pedidos. Sigue usando WhatsApp Business en tu móvil."
+              : "Bandeja en tiempo real, pipeline, un agente con el conocimiento de tu negocio y un Laboratorio que mide si de verdad está listo. En tu servidor, con tus datos y también en el teléfono."}
           </p>
 
           <div className="mt-9 flex flex-wrap gap-2.5">
-            {PUNTOS.map(({ icon: Icon, label }) => (
+            {puntos.map(({ icon: Icon, label }) => (
               <span
                 key={label}
                 className="inline-flex items-center gap-2 rounded-full border border-border-strong bg-subtle/60 px-3.5 py-2 text-[12px] font-semibold text-text-2"
